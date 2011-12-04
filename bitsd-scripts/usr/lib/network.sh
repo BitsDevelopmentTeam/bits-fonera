@@ -2,6 +2,7 @@
 
 ## File exists if connected
 NETFLAG='/tmp/network-up'
+DATESITE='http://bits2.poul.org/data.php'
 
 checkroot() {
 	if [ `id -u` != '0' ]; then

@@ -6,7 +6,7 @@ connect
 
 ## Try once each day to get the date from the server
 ## This make sure we suport daylight saving time (ora solare/legale)
-DATE=`wget -q -O - http://bits.poul.org/data.php`
+DATE=`wget -q -O - $DATESITE`
 if [ -n "$DATE" ]; then
 	date -s "$DATE" ## Use "$DATE" as DATE contains a space
 fi
