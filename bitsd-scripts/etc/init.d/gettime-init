@@ -1,0 +1,40 @@
+#!/bin/sh /etc/rc.common
+
+# See here for how to enable this service:
+# http://wiki.openwrt.org/doc/techref/initscripts
+
+# TODO : Always change the boot order of cron to 75 instead of the
+# default which is 50 *before* enabling this script. Changing the boot
+# order of this script to something below 50 has to be avoided because
+# this script would start before dropbear (ssh server) and if something
+# goes wrong, this script will enter an infinte loop bricking the fonera.
+START=70
+
+. /usr/lib/network.sh
+
+boot() {
+	## Dummy date within certificate's validity range
+	date -s "2010-09-27 12:00"
+
+	## First, try to connect
+	connect
+	while true; do
+		## Get remote date, set local date, if success break
+		DATE=`wget -q -O - http://bits.poul.org/data.php`
+		if [ -n "$DATE" ]; then
+			date -s "$DATE" && break ## Use "$DATE" as DATE contains a space
+		fi
+		## If failed disconnect, wait 15min, reconnect and retry 
+		disconnect
+		sleep 900
+		connect
+	done
+	## Now disconnect only if reading /etc/crontabs/root we are in the
+	## time window in which we should be disconnected
+	TIME=`date "+%H%M"`
+	CONNECT=`awk '/bitsd-start/ {if(length($1)==1) print $2 0$1; else print $2$1}' < /etc/crontabs/root`
+	DISCONNECT=`awk '/bitsd-stop/ {if(length($1)==1) print $2 0$1; else print $2$1}' < /etc/crontabs/root`
+	if [ "$TIME" -lt "$CONNECT" -o "$TIME" -gt "$DISCONNECT" ]; then
+		disconnect
+	fi
+}
