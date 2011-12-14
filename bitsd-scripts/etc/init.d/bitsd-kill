@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+
+# See here for how to enable this service:
+# http://wiki.openwrt.org/doc/techref/initscripts
+
+STOP=99
+
+. /usr/lib/network.sh
+
+stop() {
+	stopbits
+	disconnect
+}
+
