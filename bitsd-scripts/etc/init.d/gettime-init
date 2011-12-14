@@ -19,12 +19,8 @@ boot() {
 	## First, try to connect
 	connect
 	while true; do
-		## Get remote date, set local date, if success break
-		DATE=`wget -q -O - $DATESITE`
-		if [ -n "$DATE" ]; then
-			date -s "$DATE" && break ## Use "$DATE" as DATE contains a space
-		fi
-		## If failed disconnect, wait 15min, reconnect and retry 
+		setdate && break
+		## If failed to set date disconnect, wait 15min, reconnect and retry
 		disconnect
 		sleep 900
 		connect
@@ -36,5 +32,7 @@ boot() {
 	DISCONNECT=`awk '/bitsd-stop/ {if(length($1)==1) print $2 0$1; else print $2$1}' < /etc/crontabs/root`
 	if [ "$TIME" -lt "$CONNECT" -o "$TIME" -gt "$DISCONNECT" ]; then
 		disconnect
+	else
+		startbits
 	fi
 }

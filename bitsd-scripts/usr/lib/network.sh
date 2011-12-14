@@ -4,6 +4,15 @@
 NETFLAG='/tmp/network-up'
 DATESITE='http://bits.poul.org/data.php'
 
+## Returns 0 if successful, 1 otherwise
+setdate() {
+	DATE=`wget -q -O - $DATESITE`
+	if [ -n "$DATE" ]; then
+		date -s "$DATE" && return 0 ## Use "$DATE" as DATE contains a space
+	fi
+	return 1
+}
+
 checkroot() {
 	if [ `id -u` != '0' ]; then
 		echo 'You must be root'
@@ -29,7 +38,9 @@ connect() {
 	dhcpcd ath0
 	sleep 30
 	openvpn --config /etc/openvpn/client.conf 1>/dev/null 2>/dev/null &
-	sleep 30
+	## Without this long delay this function returns but the network isn't up yet,
+	## and this causes an infinite loop in gettime-init
+	sleep 120
 	echo 'Done'
 }
 
@@ -43,4 +54,17 @@ disconnect() {
 	## Remove connected flag
 	rm -f $NETFLAG
 	echo 'Disconnected.'
+}
+
+startbits() {
+	## Before starting bitsd kill any running instance. This happens if
+	## the script bitsd-start.sh is called two or more times without calling
+	## bitsd-stop.sh in the middle
+	killall bitsd
+
+	su bits -c bitsd &
+}
+
+stopbits() {
+	killall bitsd
 }

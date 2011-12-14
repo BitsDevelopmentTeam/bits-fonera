@@ -2,5 +2,5 @@
 
 . /usr/lib/network.sh
 
-killall bitsd
+stopbits
 disconnect
