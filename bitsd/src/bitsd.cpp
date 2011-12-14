@@ -45,14 +45,8 @@ void Bitsd::onTcpMessage(const string& message)
 		cout<<"Received a message: "<<base64_decode(arg)<<endl;
 	} else if(command=="status")
 	{
-		if(arg=="1")
-		{
-			cout<<"Sede aperta"<<endl;
-			serialWrite("poul lcd0Sede aperta     \n");
-		} else {
-			cout<<"Sede chusa"<<endl;
-			serialWrite("poul lcd0Sede chiusa     \n");
-		}
+		if(arg=="1") serialWrite("poul lcd0Sede aperta     \n");
+		else serialWrite("poul lcd0Sede chiusa     \n");
 		if(firstTime)
 		{
 			firstTime=false;
