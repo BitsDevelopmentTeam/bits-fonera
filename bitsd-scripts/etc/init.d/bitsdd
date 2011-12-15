@@ -1,0 +1,19 @@
+#!/bin/sh /etc/rc.common
+
+# See here for how to enable this service:
+# http://wiki.openwrt.org/doc/techref/initscripts
+
+START=99
+STOP=99
+
+. /usr/lib/network.sh
+
+start() {
+	is_connected && startbits
+}
+
+stop() {
+	stopbits
+}
+
+
