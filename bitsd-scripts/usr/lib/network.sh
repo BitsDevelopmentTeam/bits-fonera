@@ -18,6 +18,11 @@ checkroot() {
 	fi
 }
 
+is_connected() {
+	[ -f "$NETFLAG" ]
+	return $?
+}
+
 connect() {
 	checkroot
 	## Don't connect if already connected

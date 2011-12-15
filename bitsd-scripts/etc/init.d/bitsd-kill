@@ -9,6 +9,5 @@ STOP=99
 
 stop() {
 	stopbits
-	disconnect
 }
 
