@@ -6,11 +6,9 @@ DATESITE='http://bits.poul.org/data.php'
 
 ## Returns 0 if successful, 1 otherwise
 setdate() {
-	DATE=`wget -q -O - $DATESITE`
-	if [ -n "$DATE" ]; then
-		date -s "$DATE" && return 0 ## Use "$DATE" as DATE contains a space
-	fi
-	return 1
+	local DATE=`wget -q -O - $DATESITE`
+	date -s "$DATE" ## Use "$DATE" as DATE contains a space
+	return $?
 }
 
 checkroot() {
