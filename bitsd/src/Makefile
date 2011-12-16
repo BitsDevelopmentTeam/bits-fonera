@@ -4,6 +4,7 @@
 SRC=           \
 base64.cpp     \
 configfile.cpp \
+logger.cpp     \
 bitsd.cpp      \
 core.cpp       \
 main.cpp

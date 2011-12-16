@@ -1,36 +1,23 @@
 
 #include <iostream>
 #include <sstream>
-#include <fstream>
-#include <ctime>
 #include <boost/lexical_cast.hpp>
 #include "bitsd.h"
 #include "base64.h"
+#include "logger.h"
 
 using namespace std;
 
 Bitsd::Bitsd(const string& server, int port,
-		  const string& serialPort, int baudrate, const string& logfile)
-		  : BitsdCore(server, port, serialPort, baudrate), log(logfile),
+		  const string& serialPort, int baudrate)
+		  : BitsdCore(server, port, serialPort, baudrate),
 		    oldStatus(false), firstTime(true), counter(0) {}
-
-void Bitsd::appendToLog(const string& message)
-{
-	if(log.empty()) return;
-	ofstream logFile(log.c_str(),ios::app);
-	time_t t=time(NULL);
-	tm tt;
-	localtime_r(&t,&tt);
-	char timestring[1024];
-	strftime(timestring,1024,"%c",&tt);
-	logFile<<timestring<<": "<<message<<endl;
-}
 
 Bitsd::~Bitsd() {}
 
 void Bitsd::onConnect()
 {
-	appendToLog("Connected");
+	Logger::instance().append("Connected");
 	serialWrite("poul lcd1Bits 2.0 alpha  \n");
 }
 
@@ -55,7 +42,7 @@ void Bitsd::onTcpMessage(const string& message)
 	} else if(command=="sound")
 	{
 		serialWrite("poul sound\n");
-	} else appendToLog(string("unknown data from socket: ")+message);
+	} else Logger::instance().append(string("unknown data from socket: ")+message);
 }
 
 void Bitsd::onSerialMessage(const string& message)
@@ -83,7 +70,7 @@ void Bitsd::onSerialMessage(const string& message)
 		}
 	} catch(...)
 	{
-		appendToLog(string("unknown data from serial: ")+message);
+		Logger::instance().append(string("unknown data from serial: ")+message);
 	}
 }
 

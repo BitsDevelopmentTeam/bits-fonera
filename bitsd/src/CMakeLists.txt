@@ -8,7 +8,7 @@ set(CMAKE_BUILD_TYPE Release)
 add_definitions(-DDEBUG_MODE)
 
 ## Target
-set(BITSD_SRCS main.cpp bitsd.cpp core.cpp configfile.cpp base64.cpp)
+set(BITSD_SRCS main.cpp bitsd.cpp core.cpp logger.cpp configfile.cpp base64.cpp)
 add_executable(bitsd ${BITSD_SRCS})
 
 ## Link libraries

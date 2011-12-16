@@ -58,7 +58,10 @@ BitsdCore::BitsdCore(const string& server, int port,
 
 void BitsdCore::run()
 {
+	io.reset();
+	socket.close();
 	#ifndef DEBUG_MODE
+	serial.close();
 	try {
 		serial.open(serialPort);
 		serial.set_option(asio::serial_port_base::baud_rate(baudrate));
@@ -89,17 +92,9 @@ void BitsdCore::run()
 	timer.async_wait(boost::bind(&BitsdCore::timerExpired,this,
 			asio::placeholders::error));
 	io.post(boost::bind(&BitsdCore::onConnect,this));
-	try {
-		io.run();
-		assert(false);
-	} catch(...) {
-		io.reset();
-		socket.close();
-		#ifndef DEBUG_MODE
-		serial.close();
-		#endif //DEBUG_MODE
-		throw;
-	}
+
+	io.run();
+	assert(false); //Should never reach here
 }
 
 BitsdCore::~BitsdCore() {}

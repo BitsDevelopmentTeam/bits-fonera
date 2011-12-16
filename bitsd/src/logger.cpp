@@ -25,54 +25,26 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#include <sstream>
-#include <cassert>
-#include <unistd.h>
-#include <boost/lexical_cast.hpp>
-#include "bitsd.h"
-#include "configfile.h"
+#include <ctime>
+#include <fstream>
 #include "logger.h"
 
 using namespace std;
-using namespace boost;
 
-#ifndef DEBUG_MODE
-const string configName="/etc/config/bitsd.conf";
-#else //DEBUG_MODE
-const string configName="../bitsd-debug.conf";
-#endif //DEBUG_MODE
-
-int main()
+Logger& Logger::instance()
 {
-	ConfigFile config(configName);
-	string address=config.getString("serveraddr");
-	int port=lexical_cast<int>(config.getString("serverport"));
-	string serial=config.getString("serialport");
-	int baudrate=lexical_cast<int>(config.getString("baudrate"));
-	if(config.hasOption("logfile"))
-		Logger::instance().setLogFile(config.getString("logfile"));
-	Logger::instance().append("Bitsd 1.01 starting...");
+	static Logger singleton;
+	return singleton;
+}
 
-	const int retryPeriods[]={5,10,15,30,60,2*60,5*60,10*60,15*60};
-	const int retryMax=sizeof(retryPeriods)/sizeof(int);
-	int r=0;
-	for(;;)
-	{
-		try {
-			Bitsd (address,port,serial,baudrate).run();
-			assert(false); //Should never reach here
-		} catch(std::exception& e)
-		{
-			if(r<retryMax)
-			{
-				stringstream ss;
-				ss<<"Disconnected because of \""<<e.what()<<"\". ";
-				ss<<"Retrying connection in "<<retryPeriods[r]<<"s.";
-				if(r==retryMax-1)
-					ss<<" (further disconnections won't be logged)";
-				Logger::instance().append(ss.str());
-			}
-			sleep(r<retryMax ? retryPeriods[r++] : retryPeriods[retryMax-1]);
-		}
-	}
+void Logger::append(const string& message)
+{
+	if(file.empty()) return;
+	ofstream logFile(file.c_str(),ios::app);
+	time_t t=time(NULL);
+	tm tt;
+	localtime_r(&t,&tt);
+	char timestring[1024];
+	strftime(timestring,1024,"%c",&tt);
+	logFile<<timestring<<": "<<message<<endl;
 }
