@@ -70,6 +70,11 @@ void BitsdCore::run()
 	}
 	#endif //DEBUG_MODE
 
+	// Socket keepalive prevents timeouts when traversing NAT, but it is
+	// already activated at the other end of the connection, so it is not
+	// enabled here too
+	//socket.set_option(asio::socket_base::keep_alive(true));
+
 	tcp::resolver resolver(io);
 	tcp::resolver::query query(server,lexical_cast<string>(port));
 	tcp::resolver::iterator endpointIterator=resolver.resolve(query);
