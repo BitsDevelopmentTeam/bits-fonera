@@ -12,7 +12,7 @@ std::string base64_decode(std::string const& s);
 //Added by TFT
 inline std::string base64_encode(const std::string& s)
 {
-	base64_encode(reinterpret_cast<const unsigned char*>(s.c_str()),s.length());
+	return base64_encode(reinterpret_cast<const unsigned char*>(s.c_str()),s.length());
 }
 
 #endif //BASE64_H
