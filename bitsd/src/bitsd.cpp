@@ -11,7 +11,7 @@ using namespace std;
 Bitsd::Bitsd(const string& server, int port,
 		  const string& serialPort, int baudrate)
 		  : BitsdCore(server, port, serialPort, baudrate),
-		    oldStatus(false), firstTime(true), counter(0) {}
+		    oldStatus(false), firstTime(true), ignore(true), counter(0) {}
 
 Bitsd::~Bitsd() {}
 
@@ -32,13 +32,11 @@ void Bitsd::onTcpMessage(const string& message)
 		cout<<"Received a message: "<<base64_decode(arg)<<endl;
 	} else if(command=="status")
 	{
+		firstTime=false;
+		ignore=true;
 		if(arg=="1") serialWrite("poul lcd0Sede aperta     \n");
 		else serialWrite("poul lcd0Sede chiusa     \n");
-		if(firstTime)
-		{
-			firstTime=false;
-			oldStatus= arg=="1";
-		}
+		oldStatus= arg=="1";
 	} else if(command=="sound")
 	{
 		serialWrite("poul sound\n");
@@ -53,13 +51,17 @@ void Bitsd::onSerialMessage(const string& message)
 		//work if temperature falls to less then 2 Kelvin
 		if(i==0)
 		{
+			if(firstTime) return; //Avoid changing status before the server
 			if(oldStatus==false) return;
 			oldStatus=false;
+			if(ignore) { ignore=false; return; }
 			serialWrite("poul lcd0Sede chiusa     \n");
 			tcpWrite("status 0\n");
 		} else if(i==1) {
+			if(firstTime) return; //Avoid changing status before the server
 			if(oldStatus==true) return;
 			oldStatus=true;
+			if(ignore) { ignore=false; return; }
 			serialWrite("poul lcd0Sede aperta     \n");
 			tcpWrite("status 1\n");
 		} else {

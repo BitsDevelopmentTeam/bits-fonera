@@ -29,6 +29,7 @@ private:
 
 	bool oldStatus;
 	bool firstTime;
+	bool ignore;
 	int counter;
 };
 
