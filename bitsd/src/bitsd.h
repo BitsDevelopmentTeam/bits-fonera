@@ -31,6 +31,7 @@ private:
 	bool firstTime;
 	bool ignore;
 	int counter;
+	bool alive;
 };
 
 #endif //BITSD_H

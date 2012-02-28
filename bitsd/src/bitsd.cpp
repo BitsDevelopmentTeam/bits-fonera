@@ -11,14 +11,15 @@ using namespace std;
 Bitsd::Bitsd(const string& server, int port,
 		  const string& serialPort, int baudrate)
 		  : BitsdCore(server, port, serialPort, baudrate),
-		    oldStatus(false), firstTime(true), ignore(true), counter(0) {}
+		    oldStatus(false), firstTime(true), ignore(true), counter(0),
+		    alive(true) {}
 
 Bitsd::~Bitsd() {}
 
 void Bitsd::onConnect()
 {
 	Logger::instance().append("Connected");
-	serialWrite("poul lcd1Bits 2.0 alpha  \n");
+	serialWrite("poul lcd1  Bits 2.0 alpha\n");
 }
 
 void Bitsd::onTcpMessage(const string& message)
@@ -56,6 +57,7 @@ void Bitsd::onSerialMessage(const string& message)
 			oldStatus=false;
 			if(ignore) { ignore=false; return; }
 			serialWrite("poul lcd0Sede chiusa     \n");
+			Logger::instance().append("status 0");
 			tcpWrite("status 0\n");
 		} else if(i==1) {
 			if(firstTime) return; //Avoid changing status before the server
@@ -63,6 +65,7 @@ void Bitsd::onSerialMessage(const string& message)
 			oldStatus=true;
 			if(ignore) { ignore=false; return; }
 			serialWrite("poul lcd0Sede aperta     \n");
+			Logger::instance().append("status 1");
 			tcpWrite("status 1\n");
 		} else {
 			stringstream ss;
@@ -78,9 +81,11 @@ void Bitsd::onSerialMessage(const string& message)
 
 void Bitsd::onTimer()
 {
+	if(alive) serialWrite("poul lcd1.\n"); else serialWrite("poul lcd1 \n");
+	alive=!alive;
 	//TODO
 	#ifndef DEBUG_MODE
-	if(++counter>=60) //Every 600 seconds = 10 minutes
+	if(++counter>=600) //Every 600 seconds = 10 minutes
 	{
 		counter=0;
 		serialWrite("poul temp\n");

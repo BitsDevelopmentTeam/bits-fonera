@@ -40,7 +40,7 @@ using namespace boost::asio::ip;
 /**
  * Period at which the onTimer member function is called.
  */
-static const time_duration timerPeriod=seconds(10);
+static const time_duration timerPeriod=seconds(1);
 
 BitsdCore::BitsdCore(const string& server, int port,
 		const string& serialPort, int baudrate)
