@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bitsd
 PKG_RELEASE:=1
-PKG_VERSION:=1.03
+PKG_VERSION:=1.04
 
 include $(INCLUDE_DIR)/package.mk
 

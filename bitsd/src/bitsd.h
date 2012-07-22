@@ -26,12 +26,6 @@ private:
 	virtual void onSerialMessage(const std::string& message);
 
 	virtual void onTimer();
-
-	bool oldStatus;
-	bool firstTime;
-	bool ignore;
-	int counter;
-	bool alive;
 };
 
 #endif //BITSD_H
