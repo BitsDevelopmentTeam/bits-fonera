@@ -7,8 +7,10 @@ START=99
 STOP=99
 
 . /usr/lib/network.sh
+. /usr/lib/gpio.sh
 
 start() {
+	config_gpios
 	is_connected && startbits
 }
 

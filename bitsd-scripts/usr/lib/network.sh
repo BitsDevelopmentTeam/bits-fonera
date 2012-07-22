@@ -65,7 +65,8 @@ startbits() {
 	## the script bitsd-start.sh is called two or more times without calling
 	## bitsd-stop.sh in the middle
 	killall bitsd
-	su bits -c "bitsd &"
+	#TODO: adduser su bits -c "bitsd &"
+	bitsd &
 }
 
 stopbits() {
