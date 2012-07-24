@@ -54,6 +54,15 @@ void Bitsd::onSerialMessage(const string& message)
 			serialWrite("closed\n");
 			Logger::instance().append("status 0");
 			tcpWrite("status 0\n");
+		} else if(key=='T')
+		{
+			stringstream ss(message);
+			string x;
+			int temperature;
+			ss>>x>>temperature;
+			stringstream out;
+			out<<"temperature 0 "<<temperature<<"\n";
+			tcpWrite(ss.str());
 		}
 	} else Logger::instance().append(string("unknown data from serial: ")+message);
 }

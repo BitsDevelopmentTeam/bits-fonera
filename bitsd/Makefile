@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bitsd
 PKG_RELEASE:=1
-PKG_VERSION:=1.04
+PKG_VERSION:=1.05
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -13,7 +13,7 @@ define Package/bitsd
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=bitsd
-  DEPENDS:=+libstdcpp +boost-system
+  DEPENDS:=+libstdcpp +boost-system +libpthread
 endef
 
 define Package/bitsd/description
