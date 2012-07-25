@@ -140,7 +140,7 @@ void tempThread(void*)
 		//a thermometer in the same room. Not precise at all.
 		//The formula also assumes the ADC Vmax is 3V
 		int t=(x-952)*0.293f-5;
-		iprintf("-->T %d\n",t,x);
+		iprintf("\n-->T %d\n",t);
 	}
 }
 
@@ -161,7 +161,6 @@ int main()
 			if(l==0 || (line[l-1]!='r' && line[l-1]!='\n')) break;
 			line[l-1]='\0';
 		}
-		puts(line);
 		if(strcmp(line,"open")==0) memcpy(framebuffer,logo_open,4096);
 		else if(strcmp(line,"closed")==0) memcpy(framebuffer,logo_closed,4096);
 	}

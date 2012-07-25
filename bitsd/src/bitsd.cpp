@@ -41,6 +41,7 @@ void Bitsd::onTcpMessage(const string& message)
 void Bitsd::onSerialMessage(const string& message)
 {
 	if(message.empty()) return;
+	if(message=="open" || message=="closed") return; //Echo
 	if(message.substr(0,3)=="-->" && message.size()>=4)
 	{
 		char key=message[3];
@@ -62,7 +63,7 @@ void Bitsd::onSerialMessage(const string& message)
 			ss>>x>>temperature;
 			stringstream out;
 			out<<"temperature 0 "<<temperature<<"\n";
-			tcpWrite(ss.str());
+			tcpWrite(out.str());
 		}
 	} else Logger::instance().append(string("unknown data from serial: ")+message);
 }
