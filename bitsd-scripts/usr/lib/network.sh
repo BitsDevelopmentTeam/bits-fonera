@@ -38,8 +38,9 @@ connect() {
 	ifconfig ath0 up
 	iwconfig ath0 essid internet
 	wpa_supplicant -i ath0 -D madwifi -c /etc/wpa_supplicant.conf -d 1>/dev/null 2>/dev/null &
+	sleep 30
 	dhcpcd ath0
-	sleep 40
+	sleep 30
 	setdate
 	openvpn --config /etc/openvpn/client.conf 1>/dev/null 2>/dev/null &
 	## Without this long delay this function returns but the network isn't up yet,

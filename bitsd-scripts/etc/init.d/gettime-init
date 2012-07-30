@@ -14,7 +14,7 @@ START=70
 
 boot() {
 	## Dummy date within certificate's validity range
-	date -s "2010-09-27 12:00"
+	date -s "2012-04-01 12:00"
 
 	## First, try to connect
 	connect
