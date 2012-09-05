@@ -1,5 +1,5 @@
- /***************************************************************************
- *   Copyright (C) 2011 by Terraneo Federico                               *
+/***************************************************************************
+ *   Copyright (C) 2011, 2012 by Terraneo Federico                         *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -25,59 +25,49 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
- // Driving a framebuffer-less LCD with SPI + DMA
- // Code designed for use with the Miosix kernel.
+ // Drivers for temperature sensor and keyboard
+ 
+#ifndef MISC_DRIVERS
+#define MISC_DRIVERS
 
-#include <cstdio>
-#include <cstring>
-#include <cctype>
 #include <miosix.h>
-#include "bitsboard_display.h"
-#include "misc_drivers.h"
-#include "logo.h"
-#include "logo-open.h"
-#include "logo-closed.h"
 
-using namespace std;
-using namespace miosix;
-
-void keyboardThread(void*)
+class Temperature
 {
-	for(;;) iprintf("\n-->%c\n",Keyboard::instance().getKey());
-}
+public:
+	static Temperature& instance();
 
-void tempThread(void*)
+	int get();
+private:
+	Temperature(const Temperature&);
+	Temperature& operator=(const Temperature&);
+
+	Temperature();
+};
+
+class Keyboard
 {
-	int oldTemp=Temperature::instance().get();
-	iprintf("\n-->T %d\n",oldTemp);
-	for(;;)
+public:
+	static Keyboard& instance();
+
+	char getKey();
+
+	//returns '-' if no char available
+	char getKeyNonBlocking();
+private:
+	Keyboard(const Keyboard&);
+	Keyboard& operator= (const Keyboard&);
+
+	static void launcher(void* argv)
 	{
-		Thread::sleep(120*1000);
-		int newTemp=Temperature::instance().get();
-		if(newTemp==oldTemp) continue;
-		oldTemp=newTemp;
-		iprintf("\n-->T %d\n",oldTemp);
+		reinterpret_cast<Keyboard*>(argv)->keybThread();
 	}
-}
 
-int main()
-{
-	Thread::create(keyboardThread,2048);
-	Thread::create(tempThread,2048);
-	initializeDisplay();
-	memcpy(framebuffer,logo,4096);
+	void keybThread();
 
-	for(;;)
-	{
-		char line[256];
-		fgets(line,sizeof(line),stdin);
-		for(;;)
-		{
-			int l=strlen(line);
-			if(l==0 || (line[l-1]!='\r' && line[l-1]!='\n')) break;
-			line[l-1]='\0';
-		}
-		if(strcmp(line,"open")==0) memcpy(framebuffer,logo_open,4096);
-		else if(strcmp(line,"closed")==0) memcpy(framebuffer,logo_closed,4096);
-	}
-}
+	Keyboard();
+
+	miosix::Queue<char,3> keyPressed;
+};
+
+#endif //MISC_DRIVERS

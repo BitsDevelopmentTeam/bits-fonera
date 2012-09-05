@@ -15,7 +15,8 @@ SUBDIRS := miosix
 ##
 SRC := \
 main.cpp \
-bitsboard_display.cpp
+bitsboard_display.cpp \
+misc_drivers.cpp
 
 ##
 ## List here additional static libraries with relative path
