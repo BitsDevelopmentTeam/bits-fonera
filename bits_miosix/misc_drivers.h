@@ -37,7 +37,7 @@ class Temperature
 public:
 	static Temperature& instance();
 
-	int get();
+	float get();
 private:
 	Temperature(const Temperature&);
 	Temperature& operator=(const Temperature&);

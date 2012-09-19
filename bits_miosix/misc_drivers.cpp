@@ -53,7 +53,7 @@ Temperature& Temperature::instance()
 	return singleton;
 }
 
-int Temperature::get()
+float Temperature::get()
 {
 	const int average=32;
 	int x=0;
@@ -63,7 +63,7 @@ int Temperature::get()
 	//or just wrong. I got it by comparing the result with the one from
 	//a thermometer in the same room. Not precise at all.
 	//The formula also assumes the ADC Vmax is 3V
-	return (x-952)*0.293f-5;
+	return (static_cast<float>(x)-952.0f)*0.293f-5.0f;
 }
 
 Temperature::Temperature()

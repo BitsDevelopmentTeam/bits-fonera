@@ -25,9 +25,6 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
- // Driving a framebuffer-less LCD with SPI + DMA
- // Code designed for use with the Miosix kernel.
-
 #include <cstdio>
 #include <cstring>
 #include <cctype>
@@ -41,27 +38,40 @@
 using namespace std;
 using namespace miosix;
 
+typedef Gpio<GPIOD_BASE,14> redLed;
+typedef Gpio<GPIOD_BASE,12> greenLed;
+
 void keyboardThread(void*)
 {
-	for(;;) iprintf("\n-->%c\n",Keyboard::instance().getKey());
+	for(;;) printf("\n-->%c\n",Keyboard::instance().getKey());
 }
 
 void tempThread(void*)
 {
-	int oldTemp=Temperature::instance().get();
-	iprintf("\n-->T %d\n",oldTemp);
 	for(;;)
 	{
 		Thread::sleep(120*1000);
-		int newTemp=Temperature::instance().get();
-		if(newTemp==oldTemp) continue;
-		oldTemp=newTemp;
-		iprintf("\n-->T %d\n",oldTemp);
+		printf("\n-->T %4.1f\n",Temperature::instance().get());
 	}
+//TODO: incremental temperature
+// 	int oldTemp=Temperature::instance().get();
+// 	printf("\n-->T %4.1f\n",oldTemp);
+// 	for(;;)
+// 	{
+// 		Thread::sleep(120*1000);
+// 		int newTemp=Temperature::instance().get();
+// 		if(newTemp==oldTemp) continue;
+// 		oldTemp=newTemp;
+// 		printf("\n-->T %4.1f\n",oldTemp);
+// 	}
 }
 
 int main()
 {
+	redLed::mode(Mode::OUTPUT);
+	greenLed::mode(Mode::OUTPUT);
+	redLed::low();
+	greenLed::low();
 	Thread::create(keyboardThread,2048);
 	Thread::create(tempThread,2048);
 	initializeDisplay();
@@ -77,7 +87,16 @@ int main()
 			if(l==0 || (line[l-1]!='\r' && line[l-1]!='\n')) break;
 			line[l-1]='\0';
 		}
-		if(strcmp(line,"open")==0) memcpy(framebuffer,logo_open,4096);
-		else if(strcmp(line,"closed")==0) memcpy(framebuffer,logo_closed,4096);
+		if(strcmp(line,"open")==0)
+		{
+			redLed::low();
+			greenLed::high();
+			memcpy(framebuffer,logo_open,4096);
+		} else if(strcmp(line,"closed")==0)
+		{
+			greenLed::low();
+			redLed::high();
+			memcpy(framebuffer,logo_closed,4096);
+		}
 	}
 }
