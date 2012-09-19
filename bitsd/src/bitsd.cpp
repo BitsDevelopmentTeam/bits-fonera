@@ -59,7 +59,7 @@ void Bitsd::onSerialMessage(const string& message)
 		{
 			stringstream ss(message);
 			string x;
-			int temperature;
+			float temperature;
 			ss>>x>>temperature;
 			stringstream out;
 			out<<"temperature 0 "<<temperature<<"\n";
