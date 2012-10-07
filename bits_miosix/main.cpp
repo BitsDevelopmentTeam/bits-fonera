@@ -34,9 +34,12 @@
 #include "logo.h"
 #include "logo-open.h"
 #include "logo-closed.h"
+#include "mxgui/display.h"
+#include "mxgui/misc_inst.h"
 
 using namespace std;
 using namespace miosix;
+using namespace mxgui;
 
 typedef Gpio<GPIOD_BASE,14> redLed;
 typedef Gpio<GPIOD_BASE,12> greenLed;
@@ -68,14 +71,21 @@ void tempThread(void*)
 
 int main()
 {
+	Display& display=Display::instance();
+	{
+		DrawingContext dc(display);
+		dc.setFont(miscFixed);
+		dc.write(Point(1,1),"Hello world");
+		dc.line(Point(10,10),Point(100,100),1);
+	}
 	redLed::mode(Mode::OUTPUT);
 	greenLed::mode(Mode::OUTPUT);
 	redLed::low();
 	greenLed::low();
 	Thread::create(keyboardThread,2048);
 	Thread::create(tempThread,2048);
-	initializeDisplay();
-	memcpy(framebuffer,logo,4096);
+	//initializeDisplay();
+	//memcpy(framebuffer,logo,4096);
 
 	for(;;)
 	{

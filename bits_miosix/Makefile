@@ -8,7 +8,7 @@ include miosix/config/Makefile.inc
 ##
 ## List here subdirectories which contains makefiles
 ##
-SUBDIRS := miosix
+SUBDIRS := miosix mxgui
 
 ##
 ## List here your source files (both .s, .c and .cpp)
@@ -21,7 +21,7 @@ misc_drivers.cpp
 ##
 ## List here additional static libraries with relative path
 ##
-LIBS :=
+LIBS := mxgui/libmxgui.a
 
 ##
 ## List here additional include directories (in the form -Iinclude_dir)
