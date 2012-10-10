@@ -43,7 +43,7 @@ DisplayImpl::DisplayImpl(): textColor(), font(droid11), last(),
         beginPixelCalled(false)
 {
     initializeDisplay();
-    setTextColor(Color(0xffff),Color(0x0000));
+    setTextColor(Color(white),Color(black));
 }
 
 void DisplayImpl::write(Point p, const char *text)

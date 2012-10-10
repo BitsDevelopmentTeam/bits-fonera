@@ -44,7 +44,7 @@ public:
     /**
      * Initializes buffer to all black
      */
-    basic_framebuffer(){ clear(); }
+    basic_framebuffer() { clear(); }
 
     /**
      * Clear the framebuffer to all black.

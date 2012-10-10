@@ -54,14 +54,13 @@ namespace mxgui {
 
 inline void fixmeSetPixel(short x, short y, char color)
 {
-    if(y<64)
+	if(y>=64)
 	{
-		if(color) framebuffer[32*y+x/16] |= 1<<(x & 0xf);
-		else framebuffer[32+32*y+x/16] &=~ 1<<(x & 0xf);
-	} else {
-		if(color) framebuffer[32*y+x/16] |= 1<<(x & 0xf);
-		else framebuffer[32+32*y+x/16] &=~ 1<<(x & 0xf);
+		y-=64;
+		x+=256;
 	}
+	if(color) framebuffer[32*y+x/16] |= (1<<(x & 0xf));
+	else framebuffer[32*y+x/16] &=~ (1<<(x & 0xf));
 }
 
 class DisplayImpl
@@ -340,12 +339,12 @@ public:
 private:
     #if defined MXGUI_ORIENTATION_VERTICAL || \
         defined MXGUI_ORIENTATION_VERTICAL_MIRRORED
-    static const short int width=256;
-    static const short int height=128;
-    #elif defined MXGUI_ORIENTATION_HORIZONTAL || \
-          defined MXGUI_ORIENTATION_HORIZONTAL_MIRRORED
     static const short int width=128;
     static const short int height=256;
+    #elif defined MXGUI_ORIENTATION_HORIZONTAL || \
+          defined MXGUI_ORIENTATION_HORIZONTAL_MIRRORED
+    static const short int width=256;
+    static const short int height=128;
     #else
     #error No orientation defined
     #endif

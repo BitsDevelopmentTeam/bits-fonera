@@ -75,8 +75,11 @@ int main()
 	{
 		DrawingContext dc(display);
 		dc.setFont(miscFixed);
-		dc.write(Point(1,1),"Hello world");
-		dc.line(Point(10,10),Point(100,100),1);
+		dc.write(Point(70,20),"Hello world");
+		dc.line(Point(0,0),Point(255,127),white);
+		dc.clear(Point(10,10),Point(20,20),white);
+		for(int i=0;i<10;i++) dc.line(Point(3*i,64),Point(3*i,127),white);
+		
 	}
 	redLed::mode(Mode::OUTPUT);
 	greenLed::mode(Mode::OUTPUT);
