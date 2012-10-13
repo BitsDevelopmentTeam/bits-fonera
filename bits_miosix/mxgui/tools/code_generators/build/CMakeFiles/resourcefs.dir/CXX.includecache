@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/fede/Documents/temp/POuL/bits/bits/client/bits_miosix/mxgui/tools/code_generators/resourcefs.cpp
+iostream
+-
+fstream
+-
+cstring
+-
+vector
+-
+algorithm
+-
+boost/program_options.hpp
+-
+boost/filesystem.hpp
+-
+resourcefs_types.h
+/home/fede/Documents/temp/POuL/bits/bits/client/bits_miosix/mxgui/tools/code_generators/resourcefs_types.h
+
+/home/fede/Documents/temp/POuL/bits/bits/client/bits_miosix/mxgui/tools/code_generators/resourcefs_types.h
+

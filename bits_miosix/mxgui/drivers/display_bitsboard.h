@@ -41,16 +41,15 @@
 #include "mxgui/font.h"
 #include "mxgui/image.h"
 #include "mxgui/iterator_direction.h"
-#include "../../bitsboard_display.h"
 #include <stdexcept>
 
-//This display is 16 or 1 bit per pixel, check that the color depth is properly
+//This display is 1 bit per pixel, check that the color depth is properly
 //configured
-#if !defined(MXGUI_COLOR_DEPTH_16_BIT) && !defined(MXGUI_COLOR_DEPTH_1_BIT)
-#error The Qt driver requires a color depth of 16 or 1bit per pixel
+#ifndef MXGUI_COLOR_DEPTH_1_BIT
+#error The bitsboard driver requires a color depth of 1bit per pixel
 #endif
 
-namespace mxgui {
+extern unsigned short *framebuffer;
 
 inline void fixmeSetPixel(short x, short y, char color)
 {
@@ -59,9 +58,11 @@ inline void fixmeSetPixel(short x, short y, char color)
 		y-=64;
 		x+=256;
 	}
-	if(color) framebuffer[32*y+x/16] |= (1<<(x & 0xf));
-	else framebuffer[32*y+x/16] &=~ (1<<(x & 0xf));
+	if(color) framebuffer[32*y+x/16] &=~ (1<<(x & 0xf));
+	else framebuffer[32*y+x/16] |= (1<<(x & 0xf));
 }
+
+namespace mxgui {
 
 class DisplayImpl
 {
@@ -114,7 +115,7 @@ public:
      * member function, for example line(), you have to call beginPixel() again
      * before calling setPixel().
      */
-    void beginPixel();
+    void beginPixel() {}
 
     /**
      * Draw a pixel with desired color. You have to call beginPixel() once
@@ -224,7 +225,7 @@ public:
      * Make all changes done to the display since the last call to update()
      * visible. This backends require it.
      */
-    void update();
+    void update() {}
 
     /**
      * Pixel iterator. A pixel iterator is an output iterator that allows to
@@ -251,8 +252,7 @@ public:
             if(disp==0)
                 throw(std::logic_error("default constructed pixel iterator"));
 
-            //disp->backend.getFrameBuffer().setPixel(cur.x(),cur.y(),color);
-			fixmeSetPixel(cur.x(),cur.y(),color);
+            fixmeSetPixel(cur.x(),cur.y(),color);
             if(direction==DR)
             {
                 if(cur.y()<end.y()) cur=Point(cur.x(),cur.y()+1);
@@ -351,11 +351,10 @@ private:
 
     /// textColors[0] is the background color, textColor[3] the foreground
     /// while the other two are the intermediate colors for drawing antialiased
-    /// fonts.
+    /// fonts. They remain just for compatibilty, as this screen in monochrome
     Color textColor[4];
     Font font; ///< Current font selected for writing text
     pixel_iterator last; ///< Last iterator for end of iteration check
-    bool beginPixelCalled; ///< Used to check for beginPixel calls
 };
 
 } //namespace mxgui

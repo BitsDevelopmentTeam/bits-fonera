@@ -34,6 +34,7 @@
 #include "mxgui/misc_inst.h"
 #include "mxgui/level2/input.h"
 #include <cstdio>
+#include <unistd.h>
 
 using namespace mxgui;
 
@@ -67,33 +68,45 @@ void DrawLegend(DrawingContext& dc)
 {
     dc.drawRectangle( Point(LEGEND0_B, 0),
                       Point(LEGEND0_E, LEGEND_H),
-                      white);
+                      black);
     //dc.clear() when passed two points produces a filled rectangle
     dc.clear(
                    Point(LEGEND1_B, 0),
                    Point(LEGEND1_E, LEGEND_H),
-                   white);
+                   black);
     dc.clear(
                    Point(LEGEND2_B, 0),
                    Point(LEGEND2_E, LEGEND_H),
-                   white);
+                   black);
     dc.clear(
                    Point(LEGEND3_B, 0),
                    Point(LEGEND3_E, LEGEND_H),
-                   white);
+                   black);
 } // DrawLegend
-
+#include "logo2.h"
 ENTRY()
 {
     Display& display=Display::instance();
+	for(int i=0;;i++)
+	{
+		{
+			DrawingContext dc(display);
+			dc.setFont(tahoma);
+			dc.write(Point(0,0),"08:19:49 12/10/2012 | Sede aperta | 23.5 C");
+			dc.drawImage(Point(0,13),logo2);
+			dc.clippedDrawImage(Point(0,13),Point(i,10),Point(255,127),logo2);
+			//dc.write(Point(0,13+1+logo2.getHeight()),"** Message line");
+		}
+		sleep(1);
+	}
     InputHandler& backend=InputHandler::instance();
     Point prev(0, 0);
-    Color color = white;
+    Color color = black;
 
     {
         DrawingContext dc(display);
         dc.setFont(miscFixed);
-        dc.setTextColor(white, black);
+        dc.setTextColor(black, white);
         DrawLegend(dc);
     }
 
@@ -111,17 +124,17 @@ ENTRY()
                 {
                     if (p.x() >= LEGEND0_B && p.x() <= LEGEND0_E)
                     {
-                        dc.clear(black);
-                        color = white;
+                        dc.clear(white);
+                        color = black;
                         DrawLegend(dc);
                     }
                     else if (p.x() >= LEGEND1_B && p.x() <= LEGEND1_E)
-                        color = white;
+                        color =  black;
                     else if (p.x() >= LEGEND2_B && p.x() <= LEGEND2_E)
-                        color = white;
+                        color = black;
                     else if (p.x() >= LEGEND3_B && p.x() <= LEGEND3_E)
-                        color = white;
-                    dc.setTextColor(color, black);
+                        color = black;
+                    dc.setTextColor(black, white);
                     OutCoord(dc, p);
                     prev = Point(-1, -1);
                 }

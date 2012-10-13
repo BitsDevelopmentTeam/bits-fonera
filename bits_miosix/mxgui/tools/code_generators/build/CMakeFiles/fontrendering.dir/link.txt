@@ -1,0 +1,1 @@
+/usr/bin/c++   -O3 -DNDEBUG    CMakeFiles/fontrendering.dir/fontrendering.cpp.o  -o fontrendering -rdynamic libfontcore.a -lpng /usr/local/lib/libboost_program_options.a /usr/local/lib/libboost_filesystem.a /usr/local/lib/libboost_system.a freetype-2.4.3/objs/.libs/libfreetype.a libfontcore.a -lz 

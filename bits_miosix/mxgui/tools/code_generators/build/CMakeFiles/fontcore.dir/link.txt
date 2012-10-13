@@ -1,0 +1,2 @@
+/usr/bin/ar cr libfontcore.a  CMakeFiles/fontcore.dir/bdfparser.cpp.o CMakeFiles/fontcore.dir/ttfparser.cpp.o CMakeFiles/fontcore.dir/fixed_width_generator.cpp.o CMakeFiles/fontcore.dir/variable_width_generator.cpp.o CMakeFiles/fontcore.dir/fixes_parser.cpp.o CMakeFiles/fontcore.dir/font_core.cpp.o
+/usr/bin/ranlib libfontcore.a

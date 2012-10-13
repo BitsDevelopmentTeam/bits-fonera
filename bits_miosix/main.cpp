@@ -29,7 +29,6 @@
 #include <cstring>
 #include <cctype>
 #include <miosix.h>
-#include "bitsboard_display.h"
 #include "misc_drivers.h"
 #include "logo.h"
 #include "logo-open.h"
@@ -76,9 +75,9 @@ int main()
 		DrawingContext dc(display);
 		dc.setFont(miscFixed);
 		dc.write(Point(70,20),"Hello world");
-		dc.line(Point(0,0),Point(255,127),white);
-		dc.clear(Point(10,10),Point(20,20),white);
-		for(int i=0;i<10;i++) dc.line(Point(3*i,64),Point(3*i,127),white);
+		dc.line(Point(0,0),Point(255,127),black);
+		dc.clear(Point(10,10),Point(20,20),black);
+		for(int i=0;i<10;i++) dc.line(Point(3*i,64),Point(3*i,127),black);
 		
 	}
 	redLed::mode(Mode::OUTPUT);
@@ -87,8 +86,6 @@ int main()
 	greenLed::low();
 	Thread::create(keyboardThread,2048);
 	Thread::create(tempThread,2048);
-	//initializeDisplay();
-	//memcpy(framebuffer,logo,4096);
 
 	for(;;)
 	{
@@ -104,12 +101,12 @@ int main()
 		{
 			redLed::low();
 			greenLed::high();
-			memcpy(framebuffer,logo_open,4096);
+// 			memcpy(framebuffer,logo_open,4096);
 		} else if(strcmp(line,"closed")==0)
 		{
 			greenLed::low();
 			redLed::high();
-			memcpy(framebuffer,logo_closed,4096);
+// 			memcpy(framebuffer,logo_closed,4096);
 		}
 	}
 }

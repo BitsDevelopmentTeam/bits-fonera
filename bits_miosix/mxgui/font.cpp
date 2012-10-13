@@ -26,6 +26,7 @@
  ***************************************************************************/
 
 #include "font.h"
+#include "misc_inst.h"
 #include <cstring>
 
 using namespace std;
@@ -86,8 +87,8 @@ void Font::generatePalette(Color out[4], Color fgcolor, Color bgcolor)
     #elif defined(MXGUI_COLOR_DEPTH_8_BIT)
     #error TODO
     #elif defined(MXGUI_COLOR_DEPTH_1_BIT)
-    out[0]=out[1]=bgcolor;
-    out[2]=out[3]=fgcolor;
+    out[0]=out[1]=bgcolor ? white : black;
+    out[2]=out[3]=fgcolor ? white : black;
     #else
     #error unsupported color depth
     #endif

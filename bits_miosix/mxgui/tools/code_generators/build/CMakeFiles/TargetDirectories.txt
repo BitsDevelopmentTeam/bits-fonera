@@ -1,0 +1,4 @@
+/home/fede/Documents/temp/POuL/bits/bits/client/bits_miosix/mxgui/tools/code_generators/build/CMakeFiles/fontcore.dir
+/home/fede/Documents/temp/POuL/bits/bits/client/bits_miosix/mxgui/tools/code_generators/build/CMakeFiles/fontrendering.dir
+/home/fede/Documents/temp/POuL/bits/bits/client/bits_miosix/mxgui/tools/code_generators/build/CMakeFiles/pngconverter.dir
+/home/fede/Documents/temp/POuL/bits/bits/client/bits_miosix/mxgui/tools/code_generators/build/CMakeFiles/resourcefs.dir

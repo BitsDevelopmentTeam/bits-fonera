@@ -60,7 +60,7 @@ static const int level2MaxNumApps=4;
 ///
 /// Choose color depth. Three options are provided for 1, 8 or 16 bit per pixel
 ///
-#define MXGUI_COLOR_DEPTH_1_BIT //Untested
+#define MXGUI_COLOR_DEPTH_1_BIT
 //#define MXGUI_COLOR_DEPTH_8_BIT //Untested
 //#define MXGUI_COLOR_DEPTH_16_BIT
 
@@ -77,8 +77,8 @@ static const int level2MaxNumApps=4;
 ///
 /// Select which fonts are required. Choose one or more
 ///
-#define MXGUI_FONT_DROID11
-#define MXGUI_FONT_DROID21
+//#define MXGUI_FONT_DROID11
+//#define MXGUI_FONT_DROID21
 #define MXGUI_FONT_MISCFIXED
 #define MXGUI_FONT_TAHOMA
 #define MXGUI_ENABLE_BOLD_FONTS
@@ -101,12 +101,14 @@ static const int level2MaxNumApps=4;
 //
 // Choose color depth.
 //
-#define MXGUI_COLOR_DEPTH_1_BIT //Untested
+#define MXGUI_COLOR_DEPTH_1_BIT
 //#define MXGUI_COLOR_DEPTH_8_BIT //Untested
 //#define MXGUI_COLOR_DEPTH_16_BIT
 
 static const unsigned int SIMULATOR_DISP_HEIGHT=128;
 static const unsigned int SIMULATOR_DISP_WIDTH=256;
+static const unsigned int SIMULATOR_FGCOLOR=0;
+static const unsigned int SIMULATOR_BGCOLOR=1;
 
 //
 // Display orientation settings, choose ONE of these. Their meaninig depends

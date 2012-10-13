@@ -1,0 +1,1 @@
+/usr/bin/c++   -O3 -DNDEBUG    CMakeFiles/pngconverter.dir/pngconverter.cpp.o  -o pngconverter -rdynamic -lpng /usr/local/lib/libboost_program_options.a /usr/local/lib/libboost_filesystem.a /usr/local/lib/libboost_system.a 

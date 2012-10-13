@@ -27,11 +27,134 @@
 
 #ifdef _BOARD_BITSBOARD
 
-#include "display_bitsboard.h"
+#include <cstring>
+#include <miosix.h>
 #include "mxgui/misc_inst.h"
 #include "mxgui/line.h"
+#include "display_bitsboard.h"
 
 using namespace std;
+using namespace miosix;
+
+// Display
+typedef Gpio<GPIOB_BASE,13> sck;    //Connected to clock of 4094 and 4040
+typedef Gpio<GPIOB_BASE,15> mosi;   //Connected to data of 4094
+typedef Gpio<GPIOB_BASE,7>  dres;   //Connected to reset of 4040
+typedef Gpio<GPIOB_BASE,12> nflm;   //Negated of FLM signal to display
+typedef Gpio<GPIOB_BASE,14> nm;     //Negated of M signal to display
+typedef Gpio<GPIOB_BASE,8>  dispoff;//DISPOFF signal to display
+
+unsigned short *framebuffer;
+static volatile char sequence=0; //Used for pulse generation
+
+static void dmaRefill()
+{
+	DMA1_Stream4->CR=0;
+	DMA1_Stream4->PAR=reinterpret_cast<unsigned int>(&SPI2->DR);
+	DMA1_Stream4->M0AR=reinterpret_cast<unsigned int>(framebuffer);
+	DMA1_Stream4->NDTR=2048;
+	DMA1_Stream4->CR=DMA_SxCR_PL_1    | //High priority DMA stream
+					 DMA_SxCR_MSIZE_0 | //Read  16bit at a time from RAM
+					 DMA_SxCR_PSIZE_0 | //Write 16bit at a time to SPI
+					 DMA_SxCR_MINC    | //Increment RAM pointer
+					 DMA_SxCR_DIR_0   | //Memory to peripheral direction
+					 DMA_SxCR_TEIE    | //Interrupt on error
+					 DMA_SxCR_TCIE    | //Interrupt on completion
+					 DMA_SxCR_EN;       //Start the DMA
+}
+
+void DMA1_Stream4_IRQHandler()
+{
+	DMA1->HIFCR=DMA_HIFCR_CTCIF4  |
+                DMA_HIFCR_CTEIF4  |
+                DMA_HIFCR_CDMEIF4 |
+                DMA_HIFCR_CFEIF4;
+	dmaRefill();
+
+	//The following sequence is to generate a pulse of FLM that can "catch" an
+	//LP pulse (www.webalice.it/fede.tft/spi_as_lcd_controller/waveform_lp_flm.png)
+	//and since the frequency of LP depends on the SPI clock, these delays need
+	//to be changed accordingly if the SPI clock changes.
+	sequence=0;
+	TIM7->ARR=100; //100us delay
+	TIM7->CR1 |= TIM_CR1_CEN;
+}
+
+void TIM7_IRQHandler()
+{
+	TIM7->SR=0;
+	switch(sequence)
+	{
+		case 0:
+			sequence=1;
+			TIM7->ARR=100; //100us delay
+			TIM7->CR1 |= TIM_CR1_CEN;
+			nflm::low();
+			break;
+		case 1:
+			sequence=2;
+			TIM7->ARR=100; //100us delay
+			TIM7->CR1 |= TIM_CR1_CEN;
+			if(nm::value()) nm::low(); else nm::high(); //Toggle M
+			break;
+		case 2:
+			nflm::high();
+			break;
+	}
+}
+
+static void initializeDisplay()
+{
+	{
+		FastInterruptDisableLock dLock;
+		RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
+		RCC->APB1ENR |= RCC_APB1ENR_SPI2EN | RCC_APB1ENR_TIM7EN;
+		sck::mode(Mode::ALTERNATE_OD);
+		sck::alternateFunction(5);
+		mosi::mode(Mode::ALTERNATE_OD);
+		mosi::alternateFunction(5);
+		dres::mode(Mode::OPEN_DRAIN);
+		nflm::mode(Mode::OPEN_DRAIN);
+		nm::mode(Mode::OPEN_DRAIN);
+		dispoff::mode(Mode::OPEN_DRAIN);
+	}
+
+	nflm::high();
+	nm::high();
+	dispoff::high();
+
+	dres::high();
+	delayUs(10);
+	dres::low();
+	delayUs(10);
+
+	framebuffer=new unsigned short[2048]; //256*128/16=2048
+	memset(framebuffer,0,4096);
+
+	TIM7->CR1=TIM_CR1_OPM;
+	TIM7->DIER=TIM_DIER_UIE;
+	TIM7->PSC=84-1; //84MHz/84=1MHz (1us resolution)
+	TIM7->CNT=0;
+
+	dmaRefill();
+	NVIC_SetPriority(DMA1_Stream4_IRQn,2);//High priority for DMA
+	NVIC_EnableIRQ(DMA1_Stream4_IRQn);
+	NVIC_SetPriority(TIM7_IRQn,3);//High priority for TIM7
+	NVIC_EnableIRQ(TIM7_IRQn);
+
+	SPI2->CR2=SPI_CR2_TXDMAEN;
+	SPI2->CR1=SPI_CR1_DFF      | //16bit mode
+			  SPI_CR1_SSM      | //SS pin not connected to SPI
+			  SPI_CR1_SSI      | //Internal SS signal pulled high
+			  SPI_CR1_LSBFIRST | //Send LSB first
+			  SPI_CR1_MSTR     | //Master mode
+			  SPI_CR1_SPE      | //SPI enabled, master mode
+			  SPI_CR1_BR_0     |
+			  SPI_CR1_BR_1;      //42MHz/16=2.625MHz (/4 by the 4094)=0.66MHz
+
+	Thread::sleep(1000);
+	dispoff::low();
+}
 
 namespace mxgui {
 
@@ -39,39 +162,25 @@ namespace mxgui {
 // class DisplayImpl
 //
 
-DisplayImpl::DisplayImpl(): textColor(), font(droid11), last(),
-        beginPixelCalled(false)
+DisplayImpl::DisplayImpl(): textColor(), font(miscFixed), last()
 {
     initializeDisplay();
-    setTextColor(Color(white),Color(black));
+    setTextColor(Color(black),Color(white));
 }
 
 void DisplayImpl::write(Point p, const char *text)
 {
-    //Qt backend is meant to catch errors, so be bastard
-    if(p.x()<0 || p.y()<0)
-        throw(logic_error("DisplayImpl::write: negative value in point"));
-    if(p.x()>=width || p.y()>=height)
-        throw(logic_error("DisplayImpl::write: point outside display bounds"));
+    if(p.x()<0 || p.y()<0 || p.x()>=width || p.y()>=height) return;
 
     font.draw(*this,textColor,p,text);
-    beginPixelCalled=false;
 }
 
 void DisplayImpl::clippedWrite(Point p, Point a, Point b, const char *text)
 {
-    //Qt backend is meant to catch errors, so be bastard
-    if(a.x()<0 || a.y()<0 || b.x()<0 || b.y()<0)
-        throw(logic_error("DisplayImpl::clippedWrite:"
-                " negative value in point"));
-    if(a.x()>=width || a.y()>=height || b.x()>=width || b.y()>=height)
-        throw(logic_error("DisplayImpl::clippedWrite:"
-                " point outside display bounds"));
-    if(a.x()>b.x() || a.y()>b.y())
-        throw(logic_error("DisplayImpl::clippedWrite: reversed points"));
+    if(a.x()<0 || a.y()<0 || b.x()<0 || b.y()<0) return;
+    if(a.x()>=width || a.y()>=height || b.x()>=width || b.y()>=height) return;
 
     font.clippedDraw(*this,textColor,p,a,b,text);
-    beginPixelCalled=false;
 }
 
 void DisplayImpl::clear(Color color)
@@ -81,62 +190,34 @@ void DisplayImpl::clear(Color color)
 
 void DisplayImpl::clear(Point p1, Point p2, Color color)
 {
-    //Qt backend is meant to catch errors, so be bastard
-    if(p1.x()<0 || p1.y()<0 || p2.x()<0 || p2.y()<0)
-        throw(logic_error("DisplayImpl::clear: negative value in point"));
-    if(p1.x()>=width || p1.y()>=height || p2.x()>=width || p2.y()>=height)
-        throw(logic_error("DisplayImpl::clear: point outside display bounds"));
-    if(p2.x()<p1.x() || p2.y()<p1.y())
-        throw(logic_error("DisplayImpl::clear: p2<p1"));
-    
+    if(p1.x()<0 || p1.y()<0 || p2.x()<0 || p2.y()<0) return;
+    if(p1.x()>=width || p1.y()>=height || p2.x()>=width || p2.y()>=height) return;
+
     for(int i=p1.x();i<=p2.x();i++)
         for(int j=p1.y();j<=p2.y();j++) fixmeSetPixel(i,j,color);
-    beginPixelCalled=false;
-}
-
-void DisplayImpl::beginPixel()
-{
-    beginPixelCalled=true;
 }
 
 void DisplayImpl::setPixel(Point p, Color color)
 {
-    //Qt backend is meant to catch errors, so be bastard
-    if(beginPixelCalled==false)
-        throw(logic_error("DisplayImpl::setPixel: beginPixel not called"));
-    if(p.x()<0 || p.y()<0)
-        throw(logic_error("DisplayImpl::setPixel: negative value in point"));
-    if(p.x()>=width || p.y()>=height)
-        throw(logic_error("DisplayImpl::setPixel: point outside display bounds"));
+    //if(p.x()<0 || p.y()<0 || p.x()>=width || p.y()>=height) return;
 
-    //backend.getFrameBuffer().setPixel(p.x(),p.y(),color);
-	fixmeSetPixel(p.x(),p.y(),color);
+    fixmeSetPixel(p.x(),p.y(),color);
 }
 
 void DisplayImpl::line(Point a, Point b, Color color)
 {
-    //Qt backend is meant to catch errors, so be bastard
-    if(a.x()<0 || a.y()<0 || b.x()<0 || b.y()<0)
-        throw(logic_error("DisplayImpl::line: negative value in point"));
-    if(a.x()>=width || a.y()>=height || b.x()>=width || b.y()>=height)
-        throw(logic_error("DisplayImpl::line: point outside display bounds"));
+    if(a.x()<0 || a.y()<0 || b.x()<0 || b.y()<0) return;
+    if(a.x()>=width || a.y()>=height || b.x()>=width || b.y()>=height) return;
     
     Line::draw(*this,a,b,color);
-    beginPixelCalled=false;
 }
 
 void DisplayImpl::scanLine(Point p, const Color *colors, unsigned short length)
 {
-    //Qt backend is meant to catch errors, so be bastard
-    if(p.x()<0 || p.y()<0)
-        throw(logic_error("DisplayImpl::scanLine: negative value in point"));
-    if(p.x()>=width || p.y()>=height)
-        throw(logic_error("DisplayImpl::scanLine: point outside display bounds"));
-    if(p.x()+length>width)
-        throw(logic_error("DisplayImpl::scanLine: line too long"));
+    if(p.x()<0 || p.y()<0 || p.x()>=width || p.y()>=height) return;
+    if(p.x()+length>width) return;
     pixel_iterator it=begin(p,Point(p.x()+length-1,p.y()),RD);
     for(int i=0;i<length;i++) *it=colors[i];
-    beginPixelCalled=false;
 }
 
 void DisplayImpl::drawImage(Point p, const ImageBase& img)
@@ -144,29 +225,18 @@ void DisplayImpl::drawImage(Point p, const ImageBase& img)
     short int xEnd=p.x()+img.getWidth()-1;
     short int yEnd=p.y()+img.getHeight()-1;
 
-    //Qt backend is meant to catch errors, so be bastard
     if(xEnd >= width || yEnd >= height)
-        throw(logic_error("Image out of bounds"));
 
     img.draw(*this,p);
-    beginPixelCalled=false;
 }
 
 void DisplayImpl::clippedDrawImage(Point p, Point a, Point b,
         const ImageBase& img)
 {
-    //Qt backend is meant to catch errors, so be bastard
-    if(a.x()<0 || a.y()<0 || b.x()<0 || b.y()<0)
-        throw(logic_error("DisplayImpl::clippedDrawImage:"
-                " negative value in point"));
-    if(a.x()>=width || a.y()>=height || b.x()>=width || b.y()>=height)
-        throw(logic_error("DisplayImpl::clippedDrawImage:"
-                " point outside display bounds"));
-    if(a.x()>b.x() || a.y()>b.y())
-        throw(logic_error("DisplayImpl::clippedDrawImage: reversed points"));
+    if(a.x()<0 || a.y()<0 || b.x()<0 || b.y()<0) return;
+    if(a.x()>=width || a.y()>=height || b.x()>=width || b.y()>=height) return;
 
     img.clippedDraw(*this,p,a,b);
-    beginPixelCalled=false;
 }
 
 void DisplayImpl::drawRectangle(Point a, Point b, Color c)
@@ -179,12 +249,12 @@ void DisplayImpl::drawRectangle(Point a, Point b, Color c)
 
 void DisplayImpl::turnOn()
 {
-    //Unsupported for this display, so just ignore
+    dispoff::low();
 }
 
 void DisplayImpl::turnOff()
 {
-    //Unsupported for this display, so just ignore
+    dispoff::high();
 }
 
 void DisplayImpl::setTextColor(Color fgcolor, Color bgcolor)
@@ -197,26 +267,16 @@ void DisplayImpl::setFont(const Font& font)
     this->font=font;
 }
 
-void DisplayImpl::update()
-{
-    beginPixelCalled=false;
-}
-
 DisplayImpl::pixel_iterator DisplayImpl::begin(Point p1, Point p2, IteratorDirection d)
 {
-    //Qt backend is meant to catch errors, so be bastard
-    if(p1.x()<0 || p1.y()<0 || p2.x()<0 || p2.y()<0)
-        throw(logic_error("DisplayImpl::begin: negative value in point"));
-    if(p1.x()>=width || p1.y()>=height || p2.x()>=width || p2.y()>=height)
-        throw(logic_error("DisplayImpl::begin: point outside display bounds"));
-    if(p2.x()<p1.x() || p2.y()<p1.y())
-        throw(logic_error("DisplayImpl::begin: p2<p1"));
+    if(p1.x()<0 || p1.y()<0 || p2.x()<0 || p2.y()<0) return last;
+    if(p1.x()>=width || p1.y()>=height || p2.x()>=width || p2.y()>=height) return last;
+    if(p2.x()<p1.x() || p2.y()<p1.y()) return last;
 
     //Set the last iterator to a suitable one-past-the last value
     if(d==DR) this->last=pixel_iterator(Point(p2.x()+1,p1.y()),p2,d,this);
     else this->last=pixel_iterator(Point(p1.x(),p2.y()+1),p2,d,this);
 
-    beginPixelCalled=false;
     return pixel_iterator(p1,p2,d,this);
 }
 

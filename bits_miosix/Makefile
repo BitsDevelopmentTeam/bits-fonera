@@ -15,8 +15,8 @@ SUBDIRS := miosix mxgui
 ##
 SRC := \
 main.cpp \
-bitsboard_display.cpp \
-misc_drivers.cpp
+misc_drivers.cpp \
+logo2.cpp
 
 ##
 ## List here additional static libraries with relative path

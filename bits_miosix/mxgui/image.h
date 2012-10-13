@@ -171,8 +171,34 @@ void basic_image_base<T>::draw(U& surface, Point p) const
         short int xEnd=p.x()+this->getWidth()-1;
         short int yEnd=p.y()+this->getHeight()-1;
         typename U::pixel_iterator it=surface.begin(p,Point(xEnd,yEnd),RD);
+        #ifndef MXGUI_COLOR_DEPTH_1_BIT
         int imgSize=this->getHeight()*this->getWidth();
         for(int i=0;i<imgSize;i++) *it=Color(imgData[i]);
+        #else //MXGUI_COLOR_DEPTH_1_BIT
+        int h=this->getHeight();
+        int w=this->getWidth();
+        int stride=((w+7) & (~7))/8; //1bpp images have lines byte aligned
+        int last= w/8==stride ? stride : stride-1;
+        for(int i=0;i<h;i++)
+        {
+            int base=i*stride;
+            for(int j=0;j<last;j++)
+            {
+                T data=imgData[base+j];
+                for(int k=0;k<8;k++)
+                {
+                    *it=Color(data & 0x80 ? 1 : 0);
+                    data<<=1;
+                }
+            }
+            T data=imgData[base+stride-1];
+            for(int k=0;k<(w & 7);k++)
+            {
+                *it=Color(data & 0x80 ? 1 : 0);
+                data<<=1;
+            }
+        }
+        #endif //MXGUI_COLOR_DEPTH_1_BIT
     } else {
         short length=this->width;
         impl::AutoArray<Color> line(new Color[length]);
@@ -207,6 +233,7 @@ void basic_image_base<T>::clippedDraw(U& surface,
     {
         typename U::pixel_iterator it=surface.begin(Point(xa,ya),
                 Point(xb,yb),RD);
+        #ifndef MXGUI_COLOR_DEPTH_1_BIT
         int skipStart=(ya-p.y())*this->getWidth()+(xa-p.x());
         imgData+=skipStart;
         int toSkip=(xa-p.x())+((p.x()+this->getWidth()-1)-xb);
@@ -215,6 +242,47 @@ void basic_image_base<T>::clippedDraw(U& surface,
             for(short j=0;j<nx;j++) *it=Color(*imgData++);
             imgData+=toSkip;
         }
+        #else //MXGUI_COLOR_DEPTH_1_BIT
+        int w=this->getWidth();
+        int stride=((w+7) & (~7))/8; //1bpp images have lines byte aligned
+        int last= w/8==stride ? stride : stride-1;
+        int skipStart=(ya-p.y())*stride+(xa-p.x())/8;
+        imgData+=skipStart;
+        int toSkip=((xa-p.x())+((p.x()+w-1)-xb))/8;
+        int align=(xa-p.x()) & 7;
+        for(int i=0;i<ny;i++)
+        {
+            if(align) //TODO: specialize code instead of leaving the if in the loop
+            {
+                T data=*imgData++;
+                data<<=align;
+                for(int k=0;k<8-align;k++)
+                {
+                    *it=Color(data & 0x80 ? 1 : 0);
+                    data<<=1;
+                }
+            }
+            for(int j=0;j<(nx-align)/8;j++)
+            {
+                T data=*imgData++;
+                for(int k=0;k<8;k++)
+                {
+                    *it=Color(data & 0x80 ? 1 : 0);
+                    data<<=1;
+                }
+            }
+            if(nx & 7)
+            {
+                T data=*imgData++;
+                for(int k=0;k<(nx & 7);k++)
+                {
+                    *it=Color(data & 0x80 ? 1 : 0);
+                    data<<=1;
+                }
+            }
+            imgData+=toSkip;
+        }
+        #endif //MXGUI_COLOR_DEPTH_1_BIT
     } else {
         impl::AutoArray<Color> line(new Color[nx]);
         for(short i=0;i<ny;i++)

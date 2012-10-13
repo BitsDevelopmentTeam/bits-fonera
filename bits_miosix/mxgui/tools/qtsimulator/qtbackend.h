@@ -22,7 +22,6 @@
 #include <boost/shared_ptr.hpp>
 #include "mxgui/mxgui_settings.h"
 
-
 //Forward decl
 class UpdateSignalSender;
 
@@ -31,7 +30,7 @@ class UpdateSignalSender;
  * \param N framebuffer width
  * \param M framebuffer height
  */
-template<unsigned int N, unsigned int M>
+template<unsigned int N, unsigned int M, unsigned int F>
 class basic_framebuffer
 {
 public:
@@ -49,7 +48,16 @@ public:
     /**
      * Clear the framebuffer to all black.
      */
-    void clear() { std::memset(data,0,sizeof(data)); }
+    void clear()
+    {
+        #ifdef MXGUI_COLOR_DEPTH_16_BIT
+        for(int i=0;i<M;i++)
+            for(int j=0;j<N;j++) data[i][j]=F;
+        #elif defined(MXGUI_COLOR_DEPTH_1_BIT)
+        unsigned char fill=F ? 0xff : 0x00;
+        std::memset(data,fill,sizeof(data));
+        #endif
+    }
 
     /**
      * Get a pixel
@@ -99,7 +107,9 @@ private:
 
 ///Framebuffer instantiation
 typedef basic_framebuffer<
-    mxgui::SIMULATOR_DISP_WIDTH,mxgui::SIMULATOR_DISP_HEIGHT> FrameBuffer;
+    mxgui::SIMULATOR_DISP_WIDTH,
+    mxgui::SIMULATOR_DISP_HEIGHT,
+    mxgui::SIMULATOR_BGCOLOR> FrameBuffer;
 
 /**
  * Class that interfaces QT GUI (running from main thread) and mxgui (running
