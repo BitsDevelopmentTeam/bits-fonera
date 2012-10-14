@@ -1,0 +1,35 @@
+V1
+-----------------------------------
+Monospace text      0.015000 66.66
+Variable width text 0.013000 76.92
+Horizontal lines    0.009250 108.10
+Vertical lines      0.009250 108.10
+Oblique lines       0.009500 105.26
+Screen clear        0.006500 153.84
+Draw image          0.013000 76.92
+ClippedDraw         0.014000 71.42
+Clipped text        0.015500 64.51
+
+V2 (clear() optimized with memset)
+-----------------------------------
+Monospace text      0.015000 66.66
+Variable width text 0.013000 76.92
+Horizontal lines    0.009250 108.10
+Vertical lines      0.009250 108.10
+Oblique lines       0.009500 105.26
+Screen clear        0.000000 999.99
+Draw image          0.013000 76.92
+ClippedDraw         0.014000 71.42
+Clipped text        0.015500 64.51
+
+V3 (Color1bitlinear class)
+-----------------------------------
+Monospace text      0.014750 67.79
+Variable width text 0.012500 80.00
+Horizontal lines    0.008750 114.28
+Vertical lines      0.009250 108.10
+Oblique lines       0.009500 105.26
+Screen clear        0.000000 999.99
+Draw image          0.013000 76.92
+ClippedDraw         0.014250 70.17
+Clipped text        0.015250 65.57

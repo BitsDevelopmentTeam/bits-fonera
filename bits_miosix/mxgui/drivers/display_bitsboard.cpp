@@ -185,7 +185,7 @@ void DisplayImpl::clippedWrite(Point p, Point a, Point b, const char *text)
 
 void DisplayImpl::clear(Color color)
 {
-    clear(Point(0,0),Point(width-1,height-1),color);
+    memset(framebuffer,color ? 0x00 : 0xff,256*128/8);
 }
 
 void DisplayImpl::clear(Point p1, Point p2, Color color)
@@ -225,7 +225,7 @@ void DisplayImpl::drawImage(Point p, const ImageBase& img)
     short int xEnd=p.x()+img.getWidth()-1;
     short int yEnd=p.y()+img.getHeight()-1;
 
-    if(xEnd >= width || yEnd >= height)
+    if(xEnd >= width || yEnd >= height) return;
 
     img.draw(*this,p);
 }

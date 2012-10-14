@@ -171,10 +171,29 @@ void basic_image_base<T>::draw(U& surface, Point p) const
         short int xEnd=p.x()+this->getWidth()-1;
         short int yEnd=p.y()+this->getHeight()-1;
         typename U::pixel_iterator it=surface.begin(p,Point(xEnd,yEnd),RD);
-        #ifndef MXGUI_COLOR_DEPTH_1_BIT
         int imgSize=this->getHeight()*this->getWidth();
         for(int i=0;i<imgSize;i++) *it=Color(imgData[i]);
-        #else //MXGUI_COLOR_DEPTH_1_BIT
+    } else {
+        short length=this->width;
+        impl::AutoArray<Color> line(new Color[length]);
+        for(short i=0;i<this->height;i++)
+        {
+            if(this->getScanLine(Point(0,i),line.get(),length)==false) return;
+            surface.scanLine(Point(p.x(),p.y()+i),line.get(),length);
+        }
+    }
+}
+
+template<> template<typename U>
+void basic_image_base<Color1bitlinear>::draw(U& surface, Point p) const
+{
+    using namespace std;
+    const Color1bitlinear *imgData=this->getData();
+    if(imgData!=0)
+    {
+        short int xEnd=p.x()+this->getWidth()-1;
+        short int yEnd=p.y()+this->getHeight()-1;
+        typename U::pixel_iterator it=surface.begin(p,Point(xEnd,yEnd),RD);
         int h=this->getHeight();
         int w=this->getWidth();
         int stride=((w+7) & (~7))/8; //1bpp images have lines byte aligned
@@ -184,21 +203,20 @@ void basic_image_base<T>::draw(U& surface, Point p) const
             int base=i*stride;
             for(int j=0;j<last;j++)
             {
-                T data=imgData[base+j];
+                unsigned char data=imgData[base+j];
                 for(int k=0;k<8;k++)
                 {
                     *it=Color(data & 0x80 ? 1 : 0);
                     data<<=1;
                 }
             }
-            T data=imgData[base+stride-1];
+            unsigned char data=imgData[base+stride-1];
             for(int k=0;k<(w & 7);k++)
             {
                 *it=Color(data & 0x80 ? 1 : 0);
                 data<<=1;
             }
         }
-        #endif //MXGUI_COLOR_DEPTH_1_BIT
     } else {
         short length=this->width;
         impl::AutoArray<Color> line(new Color[length]);
@@ -233,7 +251,6 @@ void basic_image_base<T>::clippedDraw(U& surface,
     {
         typename U::pixel_iterator it=surface.begin(Point(xa,ya),
                 Point(xb,yb),RD);
-        #ifndef MXGUI_COLOR_DEPTH_1_BIT
         int skipStart=(ya-p.y())*this->getWidth()+(xa-p.x());
         imgData+=skipStart;
         int toSkip=(xa-p.x())+((p.x()+this->getWidth()-1)-xb);
@@ -241,8 +258,41 @@ void basic_image_base<T>::clippedDraw(U& surface,
         {
             for(short j=0;j<nx;j++) *it=Color(*imgData++);
             imgData+=toSkip;
+        }      
+    } else {
+        impl::AutoArray<Color> line(new Color[nx]);
+        for(short i=0;i<ny;i++)
+        {
+            if(this->getScanLine(Point(xa-p.x(),ya-p.y()+i),line.get(),nx)
+                    ==false) return;
+            surface.scanLine(Point(xa,ya+i),line.get(),nx);
         }
-        #else //MXGUI_COLOR_DEPTH_1_BIT
+    }
+}
+
+template<> template<typename U>
+void basic_image_base<Color1bitlinear>::clippedDraw(U& surface,
+        Point p, Point a, Point b) const
+{
+    using namespace std;
+    //Find rectangle wich is the non-empty intersection of the image rectangle
+    //with the clip rectangle
+    short xa=max(p.x(),a.x());
+    short xb=min<short>(p.x()+this->getWidth()-1,b.x());
+    if(xa>xb) return; //Empty intersection
+
+    short ya=max(p.y(),a.y());
+    short yb=min<short>(p.y()+this->getHeight()-1,b.y());
+    if(ya>yb) return; //Empty intersection
+
+    //Draw image
+    short nx=xb-xa+1;
+    short ny=yb-ya+1;
+    const Color1bitlinear *imgData=this->getData();
+    if(imgData!=0)
+    {
+        typename U::pixel_iterator it=surface.begin(Point(xa,ya),
+                Point(xb,yb),RD);
         int stride=(this->getWidth()+7) & (~7); //1bpp images have lines byte aligned
         int skipStart=(ya-p.y())*stride/8+(xa-p.x())/8;
         imgData+=skipStart;
@@ -255,7 +305,7 @@ void basic_image_base<T>::clippedDraw(U& surface,
         {
             if(head)
             {
-                T data=*imgData++;
+                unsigned char data=*imgData++;
                 data<<=head;
                 for(int k=0;k<8-head;k++)
                 {
@@ -265,7 +315,7 @@ void basic_image_base<T>::clippedDraw(U& surface,
             }
             for(int j=0;j<body;j++)
             {
-                T data=*imgData++;
+                unsigned char data=*imgData++;
                 for(int k=0;k<8;k++)
                 {
                     *it=Color(data & 0x80 ? 1 : 0);
@@ -274,7 +324,7 @@ void basic_image_base<T>::clippedDraw(U& surface,
             }
             if(tail)
             {
-                T data=*imgData++;
+                unsigned char data=*imgData++;
                 for(int k=0;k<tail;k++)
                 {
                     *it=Color(data & 0x80 ? 1 : 0);
@@ -283,7 +333,6 @@ void basic_image_base<T>::clippedDraw(U& surface,
             }
             imgData+=toSkip;
         }
-        #endif //MXGUI_COLOR_DEPTH_1_BIT
     } else {
         impl::AutoArray<Color> line(new Color[nx]);
         for(short i=0;i<ny;i++)
@@ -299,14 +348,8 @@ template<typename T>
 basic_image_base<T>::~basic_image_base() {}
 
 /// \ingroup pub_iface
-/// Define the ImageBase class, depending on the COLOR_DEPTH constant
-#ifdef MXGUI_COLOR_DEPTH_1_BIT
-typedef basic_image_base<unsigned char> ImageBase;
-#elif defined(MXGUI_COLOR_DEPTH_8_BIT)
-typedef basic_image_base<unsigned char> ImageBase;
-#elif defined(MXGUI_COLOR_DEPTH_16_BIT)
-typedef basic_image_base<unsigned short> ImageBase;
-#endif
+/// Define the ImageBase class
+typedef basic_image_base<Color> ImageBase;
 
 /**
  * \ingroup pub_iface
@@ -334,8 +377,9 @@ public:
      * must be taken, otherwise the caller must free the memory when the Image
      * is no longer useful, to avoid a memory leak.
      */
-    basic_image(short int height, short int width, const T *data)
-            : basic_image_base<T>(height, width), data(data) {}
+    basic_image(short int height, short int width, const void *data)
+            : basic_image_base<T>(height, width),
+              data(reinterpret_cast<const T*>(data)) {}
 
     /**
      * \return a const pointer to the image's data
@@ -357,14 +401,8 @@ private:
 };
 
 /// \ingroup pub_iface
-/// Define the Image class, depending on the COLOR_DEPTH constant
-#ifdef MXGUI_COLOR_DEPTH_1_BIT
-typedef basic_image<unsigned char> Image;
-#elif defined(MXGUI_COLOR_DEPTH_8_BIT)
-typedef basic_image<unsigned char> Image;
-#elif defined(MXGUI_COLOR_DEPTH_16_BIT)
-typedef basic_image<unsigned short> Image;
-#endif
+/// Define the Image class
+typedef basic_image<Color> Image;
 
 } // namespace mxgui
 

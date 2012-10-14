@@ -101,7 +101,7 @@ private:
 #ifdef MXGUI_COLOR_DEPTH_16_BIT
     unsigned short data[M][N];
 #elif defined(MXGUI_COLOR_DEPTH_1_BIT)
-    unsigned char data[M][N/8];
+    unsigned char data[M][(N+7)/8];
 #endif
 };
 
