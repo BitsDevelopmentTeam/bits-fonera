@@ -245,24 +245,26 @@ void basic_image_base<T>::clippedDraw(U& surface,
         #else //MXGUI_COLOR_DEPTH_1_BIT
         int w=this->getWidth();
         int stride=((w+7) & (~7))/8; //1bpp images have lines byte aligned
-        int last= w/8==stride ? stride : stride-1;
         int skipStart=(ya-p.y())*stride+(xa-p.x())/8;
         imgData+=skipStart;
-        int toSkip=((xa-p.x())+((p.x()+w-1)-xb))/8;
-        int align=(xa-p.x()) & 7;
+        int toSkip=(xa-p.x())/8+((p.x()+w-1)-xb)/8;
+        int head=(xa-p.x()) & 7;
+        int body=head ? nx-(8-head) : nx;
+        int tail=body & 7;
+        body/=8;
         for(int i=0;i<ny;i++)
         {
-            if(align) //TODO: specialize code instead of leaving the if in the loop
+            if(head)
             {
                 T data=*imgData++;
-                data<<=align;
-                for(int k=0;k<8-align;k++)
+                data<<=head;
+                for(int k=0;k<8-head;k++)
                 {
                     *it=Color(data & 0x80 ? 1 : 0);
                     data<<=1;
                 }
             }
-            for(int j=0;j<(nx-align)/8;j++)
+            for(int j=0;j<body;j++)
             {
                 T data=*imgData++;
                 for(int k=0;k<8;k++)
@@ -271,10 +273,10 @@ void basic_image_base<T>::clippedDraw(U& surface,
                     data<<=1;
                 }
             }
-            if(nx & 7)
+            if(tail)
             {
                 T data=*imgData++;
-                for(int k=0;k<(nx & 7);k++)
+                for(int k=0;k<tail;k++)
                 {
                     *it=Color(data & 0x80 ? 1 : 0);
                     data<<=1;
