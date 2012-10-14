@@ -45,6 +45,7 @@ typedef Gpio<GPIOB_BASE,14> nm;     //Negated of M signal to display
 typedef Gpio<GPIOB_BASE,8>  dispoff;//DISPOFF signal to display
 
 unsigned short *framebuffer;
+unsigned int *framebufferBitBandAlias;
 static volatile char sequence=0; //Used for pulse generation
 
 static void dmaRefill()
@@ -129,6 +130,8 @@ static void initializeDisplay()
 	delayUs(10);
 
 	framebuffer=new unsigned short[2048]; //256*128/16=2048
+	unsigned int bba=(reinterpret_cast<unsigned>(framebuffer)-0x20000000)*32;
+	framebufferBitBandAlias=reinterpret_cast<unsigned int*>(0x22000000+bba);
 	memset(framebuffer,0,4096);
 
 	TIM7->CR1=TIM_CR1_OPM;
@@ -193,15 +196,24 @@ void DisplayImpl::clear(Point p1, Point p2, Color color)
     if(p1.x()<0 || p1.y()<0 || p2.x()<0 || p2.y()<0) return;
     if(p1.x()>=width || p1.y()>=height || p2.x()>=width || p2.y()>=height) return;
 
+    //TODO: can be optimized
     for(int i=p1.x();i<=p2.x();i++)
-        for(int j=p1.y();j<=p2.y();j++) fixmeSetPixel(i,j,color);
+        for(int j=p1.y();j<=p2.y();j++) setPixel(i,j,color);
 }
 
 void DisplayImpl::setPixel(Point p, Color color)
 {
     //if(p.x()<0 || p.y()<0 || p.x()>=width || p.y()>=height) return;
 
-    fixmeSetPixel(p.x(),p.y(),color);
+    unsigned short x=p.x();
+    unsigned short y=p.y();
+    if(y>=64)
+    {
+        y-=64;
+        x+=256;
+    }
+    if(color) framebuffer[32*y+x/16] &=~ (1<<(x & 0xf));
+    else framebuffer[32*y+x/16] |= (1<<(x & 0xf));
 }
 
 void DisplayImpl::line(Point a, Point b, Color color)
@@ -209,6 +221,7 @@ void DisplayImpl::line(Point a, Point b, Color color)
     if(a.x()<0 || a.y()<0 || b.x()<0 || b.y()<0) return;
     if(a.x()>=width || a.y()>=height || b.x()>=width || b.y()>=height) return;
     
+    //TODO: can be optimized for vertical or horizontal lines
     Line::draw(*this,a,b,color);
 }
 
@@ -227,6 +240,7 @@ void DisplayImpl::drawImage(Point p, const ImageBase& img)
 
     if(xEnd >= width || yEnd >= height) return;
 
+    //TODO: can be optimized of image and point are 8-bit aligned
     img.draw(*this,p);
 }
 
@@ -236,6 +250,7 @@ void DisplayImpl::clippedDrawImage(Point p, Point a, Point b,
     if(a.x()<0 || a.y()<0 || b.x()<0 || b.y()<0) return;
     if(a.x()>=width || a.y()>=height || b.x()>=width || b.y()>=height) return;
 
+    //TODO: can be optimized of image and point are 8-bit aligned
     img.clippedDraw(*this,p,a,b);
 }
 
