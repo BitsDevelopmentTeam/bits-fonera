@@ -95,8 +95,8 @@ ENTRY()
 			dc.setFont(tahoma);
 			dc.write(Point(0,0),"08:19:49 12/10/2012 | Sede aperta | 23.5 C");
 			//dc.drawImage(Point(0,13),logo2);
-			//dc.clippedDrawImage(Point(0,13),Point(i,10+i),Point(255-i,127-i),logo2);
-			dc.clippedDrawImage(Point(0,13),Point(0,10),Point(255-i,127),logo2);
+			dc.clippedDrawImage(Point(0,13),Point(i,10+i),Point(255-i,127-i),logo2);
+			//dc.clippedDrawImage(Point(0,13),Point(0,10),Point(255-i,127),logo2);
 			dc.write(Point(0,13+1+logo2.getHeight()),"** Message line");
 		}
 		sleep(1);

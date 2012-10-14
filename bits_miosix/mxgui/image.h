@@ -243,11 +243,10 @@ void basic_image_base<T>::clippedDraw(U& surface,
             imgData+=toSkip;
         }
         #else //MXGUI_COLOR_DEPTH_1_BIT
-        int w=this->getWidth();
-        int stride=((w+7) & (~7))/8; //1bpp images have lines byte aligned
-        int skipStart=(ya-p.y())*stride+(xa-p.x())/8;
+        int stride=(this->getWidth()+7) & (~7); //1bpp images have lines byte aligned
+        int skipStart=(ya-p.y())*stride/8+(xa-p.x())/8;
         imgData+=skipStart;
-        int toSkip=(xa-p.x())/8+((p.x()+w-1)-xb)/8;
+        int toSkip=(xa-p.x())/8+((p.x()+stride-1)-xb)/8;
         int head=(xa-p.x()) & 7;
         int body=head ? nx-(8-head) : nx;
         int tail=body & 7;
