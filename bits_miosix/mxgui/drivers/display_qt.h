@@ -46,7 +46,7 @@
 
 //This display is 16 or 1 bit per pixel, check that the color depth is properly
 //configured
-#if !defined(MXGUI_COLOR_DEPTH_16_BIT) && !defined(MXGUI_COLOR_DEPTH_1_BIT)
+#if !defined(MXGUI_COLOR_DEPTH_16_BIT) && !defined(MXGUI_COLOR_DEPTH_1_BIT_LINEAR)
 #error The Qt driver requires a color depth of 16 or 1bit per pixel
 #endif
 

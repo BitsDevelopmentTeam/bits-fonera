@@ -215,4 +215,4 @@ static const unsigned char pixelData[]={
  255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,254
 };
 
-const Image logo2(height,width,pixelData);
+const basic_image<Color1bitlinear> logo2(height,width,pixelData);

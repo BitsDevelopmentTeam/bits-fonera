@@ -184,6 +184,7 @@ void basic_image_base<T>::draw(U& surface, Point p) const
     }
 }
 
+// Specialization for Color1bitlinear
 template<> template<typename U>
 void basic_image_base<Color1bitlinear>::draw(U& surface, Point p) const
 {
@@ -270,6 +271,7 @@ void basic_image_base<T>::clippedDraw(U& surface,
     }
 }
 
+// Specialization for Color1bitlinear
 template<> template<typename U>
 void basic_image_base<Color1bitlinear>::clippedDraw(U& surface,
         Point p, Point a, Point b) const

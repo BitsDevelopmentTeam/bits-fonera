@@ -33,3 +33,27 @@ Screen clear        0.000000 999.99
 Draw image          0.013000 76.92
 ClippedDraw         0.014250 70.17
 Clipped text        0.015250 65.57
+
+V4 (pixel_iterator with bitbanding)
+-----------------------------------
+Monospace text      0.004750 210.52
+Variable width text 0.004250 235.29
+Horizontal lines    0.010250 97.56
+Vertical lines      0.010500 95.23
+Oblique lines       0.010750 93.02
+Screen clear        0.000000 999.99
+Draw image          0.005000 200.00
+ClippedDraw         0.007000 142.85
+Clipped text        0.004750 210.52
+
+V5 (setPixel with bitbanding)
+-----------------------------------
+Monospace text      0.004250 235.29
+Variable width text 0.004250 235.29
+Horizontal lines    0.005250 190.47
+Vertical lines      0.005250 190.47
+Oblique lines       0.005750 173.91
+Screen clear        0.000000 999.99
+Draw image          0.005000 200.00
+ClippedDraw         0.006750 148.14
+Clipped text        0.004750 210.52

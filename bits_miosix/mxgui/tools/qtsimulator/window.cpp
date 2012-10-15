@@ -40,7 +40,7 @@ Window::Window(QWidget *parent): QWidget(parent),
         image(QSize(FrameBuffer::width,FrameBuffer::height),
 #ifdef MXGUI_COLOR_DEPTH_16_BIT
         QImage::Format_RGB16),
-#elif defined(MXGUI_COLOR_DEPTH_1_BIT)
+#elif defined(MXGUI_COLOR_DEPTH_1_BIT_LINEAR)
         QImage::Format_MonoLSB),
 #endif
         w(this), layout(&w), buttonA("<"), buttonB(">"),

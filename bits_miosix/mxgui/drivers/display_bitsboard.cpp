@@ -44,8 +44,7 @@ typedef Gpio<GPIOB_BASE,12> nflm;   //Negated of FLM signal to display
 typedef Gpio<GPIOB_BASE,14> nm;     //Negated of M signal to display
 typedef Gpio<GPIOB_BASE,8>  dispoff;//DISPOFF signal to display
 
-unsigned short *framebuffer;
-unsigned int *framebufferBitBandAlias;
+static unsigned short *framebuffer;
 static volatile char sequence=0; //Used for pulse generation
 
 static void dmaRefill()
@@ -104,61 +103,6 @@ void TIM7_IRQHandler()
 	}
 }
 
-static void initializeDisplay()
-{
-	{
-		FastInterruptDisableLock dLock;
-		RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
-		RCC->APB1ENR |= RCC_APB1ENR_SPI2EN | RCC_APB1ENR_TIM7EN;
-		sck::mode(Mode::ALTERNATE_OD);
-		sck::alternateFunction(5);
-		mosi::mode(Mode::ALTERNATE_OD);
-		mosi::alternateFunction(5);
-		dres::mode(Mode::OPEN_DRAIN);
-		nflm::mode(Mode::OPEN_DRAIN);
-		nm::mode(Mode::OPEN_DRAIN);
-		dispoff::mode(Mode::OPEN_DRAIN);
-	}
-
-	nflm::high();
-	nm::high();
-	dispoff::high();
-
-	dres::high();
-	delayUs(10);
-	dres::low();
-	delayUs(10);
-
-	framebuffer=new unsigned short[2048]; //256*128/16=2048
-	unsigned int bba=(reinterpret_cast<unsigned>(framebuffer)-0x20000000)*32;
-	framebufferBitBandAlias=reinterpret_cast<unsigned int*>(0x22000000+bba);
-	memset(framebuffer,0,4096);
-
-	TIM7->CR1=TIM_CR1_OPM;
-	TIM7->DIER=TIM_DIER_UIE;
-	TIM7->PSC=84-1; //84MHz/84=1MHz (1us resolution)
-	TIM7->CNT=0;
-
-	dmaRefill();
-	NVIC_SetPriority(DMA1_Stream4_IRQn,2);//High priority for DMA
-	NVIC_EnableIRQ(DMA1_Stream4_IRQn);
-	NVIC_SetPriority(TIM7_IRQn,3);//High priority for TIM7
-	NVIC_EnableIRQ(TIM7_IRQn);
-
-	SPI2->CR2=SPI_CR2_TXDMAEN;
-	SPI2->CR1=SPI_CR1_DFF      | //16bit mode
-			  SPI_CR1_SSM      | //SS pin not connected to SPI
-			  SPI_CR1_SSI      | //Internal SS signal pulled high
-			  SPI_CR1_LSBFIRST | //Send LSB first
-			  SPI_CR1_MSTR     | //Master mode
-			  SPI_CR1_SPE      | //SPI enabled, master mode
-			  SPI_CR1_BR_0     |
-			  SPI_CR1_BR_1;      //42MHz/16=2.625MHz (/4 by the 4094)=0.66MHz
-
-	Thread::sleep(1000);
-	dispoff::low();
-}
-
 namespace mxgui {
 
 //
@@ -167,8 +111,58 @@ namespace mxgui {
 
 DisplayImpl::DisplayImpl(): textColor(), font(miscFixed), last()
 {
-    initializeDisplay();
     setTextColor(Color(black),Color(white));
+    {
+        FastInterruptDisableLock dLock;
+        RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
+        RCC->APB1ENR |= RCC_APB1ENR_SPI2EN | RCC_APB1ENR_TIM7EN;
+        sck::mode(Mode::ALTERNATE_OD);
+        sck::alternateFunction(5);
+        mosi::mode(Mode::ALTERNATE_OD);
+        mosi::alternateFunction(5);
+        dres::mode(Mode::OPEN_DRAIN);
+        nflm::mode(Mode::OPEN_DRAIN);
+        nm::mode(Mode::OPEN_DRAIN);
+        dispoff::mode(Mode::OPEN_DRAIN);
+    }
+
+    nflm::high();
+    nm::high();
+    dispoff::high();
+
+    dres::high();
+    delayUs(10);
+    dres::low();
+    delayUs(10);
+
+    framebuffer=new unsigned short[2048]; //256*128/16=2048
+    unsigned int bba=(reinterpret_cast<unsigned>(framebuffer)-0x20000000)*32;
+    framebufferBitBandAlias=reinterpret_cast<unsigned int*>(0x22000000+bba);
+    memset(framebuffer,0,4096);
+
+    TIM7->CR1=TIM_CR1_OPM;
+    TIM7->DIER=TIM_DIER_UIE;
+    TIM7->PSC=84-1; //84MHz/84=1MHz (1us resolution)
+    TIM7->CNT=0;
+
+    dmaRefill();
+    NVIC_SetPriority(DMA1_Stream4_IRQn,2);//High priority for DMA
+    NVIC_EnableIRQ(DMA1_Stream4_IRQn);
+    NVIC_SetPriority(TIM7_IRQn,3);//High priority for TIM7
+    NVIC_EnableIRQ(TIM7_IRQn);
+
+    SPI2->CR2=SPI_CR2_TXDMAEN;
+    SPI2->CR1=SPI_CR1_DFF      | //16bit mode
+              SPI_CR1_SSM      | //SS pin not connected to SPI
+              SPI_CR1_SSI      | //Internal SS signal pulled high
+              SPI_CR1_LSBFIRST | //Send LSB first
+              SPI_CR1_MSTR     | //Master mode
+              SPI_CR1_SPE      | //SPI enabled, master mode
+              SPI_CR1_BR_0     |
+              SPI_CR1_BR_1;      //42MHz/16=2.625MHz (/4 by the 4094)=0.66MHz
+
+    Thread::sleep(500);
+    dispoff::low();
 }
 
 void DisplayImpl::write(Point p, const char *text)
@@ -196,24 +190,9 @@ void DisplayImpl::clear(Point p1, Point p2, Color color)
     if(p1.x()<0 || p1.y()<0 || p2.x()<0 || p2.y()<0) return;
     if(p1.x()>=width || p1.y()>=height || p2.x()>=width || p2.y()>=height) return;
 
-    //TODO: can be optimized
-    for(int i=p1.x();i<=p2.x();i++)
-        for(int j=p1.y();j<=p2.y();j++) setPixel(i,j,color);
-}
-
-void DisplayImpl::setPixel(Point p, Color color)
-{
-    //if(p.x()<0 || p.y()<0 || p.x()>=width || p.y()>=height) return;
-
-    unsigned short x=p.x();
-    unsigned short y=p.y();
-    if(y>=64)
-    {
-        y-=64;
-        x+=256;
-    }
-    if(color) framebuffer[32*y+x/16] &=~ (1<<(x & 0xf));
-    else framebuffer[32*y+x/16] |= (1<<(x & 0xf));
+    //TODO: can be optimized further
+    pixel_iterator it=begin(p1,p2,RD);
+    while(it!=end()) *it=color;
 }
 
 void DisplayImpl::line(Point a, Point b, Color color)
@@ -240,7 +219,7 @@ void DisplayImpl::drawImage(Point p, const ImageBase& img)
 
     if(xEnd >= width || yEnd >= height) return;
 
-    //TODO: can be optimized of image and point are 8-bit aligned
+    //TODO: can be optimized if image and point are 8-bit aligned
     img.draw(*this,p);
 }
 
@@ -250,7 +229,7 @@ void DisplayImpl::clippedDrawImage(Point p, Point a, Point b,
     if(a.x()<0 || a.y()<0 || b.x()<0 || b.y()<0) return;
     if(a.x()>=width || a.y()>=height || b.x()>=width || b.y()>=height) return;
 
-    //TODO: can be optimized of image and point are 8-bit aligned
+    //TODO: can be optimized if image and point are 8-bit aligned
     img.clippedDraw(*this,p,a,b);
 }
 
@@ -284,9 +263,16 @@ void DisplayImpl::setFont(const Font& font)
 
 DisplayImpl::pixel_iterator DisplayImpl::begin(Point p1, Point p2, IteratorDirection d)
 {
-    if(p1.x()<0 || p1.y()<0 || p2.x()<0 || p2.y()<0) return last;
-    if(p1.x()>=width || p1.y()>=height || p2.x()>=width || p2.y()>=height) return last;
-    if(p2.x()<p1.x() || p2.y()<p1.y()) return last;
+    bool fail=false;
+    if(p1.x()<0 || p1.y()<0 || p2.x()<0 || p2.y()<0) fail=true;
+    if(p1.x()>=width || p1.y()>=height || p2.x()>=width || p2.y()>=height) fail=true;
+    if(p2.x()<p1.x() || p2.y()<p1.y()) fail=true;
+    if(fail)
+    {
+        //Failsafe values
+        this->last=pixel_iterator(Point(1,0),Point(1,0),RD,this);
+        return pixel_iterator(Point(0,0),Point(getWidth()-1,getHeight()-1),RD,this);
+    }
 
     //Set the last iterator to a suitable one-past-the last value
     if(d==DR) this->last=pixel_iterator(Point(p2.x()+1,p1.y()),p2,d,this);

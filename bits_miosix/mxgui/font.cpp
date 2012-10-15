@@ -86,7 +86,7 @@ void Font::generatePalette(Color out[4], Color fgcolor, Color bgcolor)
     out[0]=bgcolor;
     #elif defined(MXGUI_COLOR_DEPTH_8_BIT)
     #error TODO
-    #elif defined(MXGUI_COLOR_DEPTH_1_BIT)
+    #elif defined(MXGUI_COLOR_DEPTH_1_BIT_LINEAR)
     out[0]=out[1]=bgcolor ? white : black;
     out[2]=out[3]=fgcolor ? white : black;
     #else

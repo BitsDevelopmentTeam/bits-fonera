@@ -80,19 +80,19 @@ void Benchmark::start()
     //Then, do benchmarks
     fixedWidthTextBenchmark();
     variableWidthTextBenchmark();
-    #ifndef MXGUI_COLOR_DEPTH_1_BIT
+    #ifndef MXGUI_COLOR_DEPTH_1_BIT_LINEAR
     antialiasingBenchmark();
-    #endif //MXGUI_COLOR_DEPTH_1_BIT
+    #endif //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
     horizontalLineBenchmark();
     verticalLineBenchmark();
     obliqueLineBenchmark();
     clearScreenBenchmark();
     imageBenchmark();
-    #ifndef MXGUI_COLOR_DEPTH_1_BIT
+    #ifndef MXGUI_COLOR_DEPTH_1_BIT_LINEAR
     scanLineBenchmark();
-    #endif //MXGUI_COLOR_DEPTH_1_BIT
+    #endif //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
     clippedDrawBenchmark();
-     clippedWriteBenchmark();
+    clippedWriteBenchmark();
     #ifdef MXGUI_ENABLE_RESOURCEFS
     resourceImageBenchmark();
     #endif //MXGUI_ENABLE_RESOURCEFS
@@ -131,11 +131,11 @@ void Benchmark::fixedWidthTextBenchmark()
         {
             DrawingContext dc(display);
             dc.setFont(miscFixed);
-            #ifndef MXGUI_COLOR_DEPTH_1_BIT
+            #ifndef MXGUI_COLOR_DEPTH_1_BIT_LINEAR
             dc.setTextColor(i%2==0 ? red : green,black);
-            #else //MXGUI_COLOR_DEPTH_1_BIT
+            #else //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
             i%2==0 ? dc.setTextColor(white,black) : dc.setTextColor(black,white);
-            #endif //MXGUI_COLOR_DEPTH_1_BIT
+            #endif //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
             timer.start();
             for(int j=0;j<dc.getHeight();j+=16) dc.write(Point(0,j),text);
             timer.stop();
@@ -165,11 +165,11 @@ void Benchmark::variableWidthTextBenchmark()
         {
             DrawingContext dc(display);
             dc.setFont(tahoma);
-            #ifndef MXGUI_COLOR_DEPTH_1_BIT
+            #ifndef MXGUI_COLOR_DEPTH_1_BIT_LINEAR
             dc.setTextColor(i%2==0 ? red : green,black);
-            #else //MXGUI_COLOR_DEPTH_1_BIT
+            #else //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
             i%2==0 ? dc.setTextColor(white,black) : dc.setTextColor(black,white);
-            #endif //MXGUI_COLOR_DEPTH_1_BIT
+            #endif //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
             timer.start();
             for(int j=0;j<dc.getHeight();j+=12) dc.write(Point(0,j),text);
             timer.stop();
@@ -183,7 +183,7 @@ void Benchmark::variableWidthTextBenchmark()
 }
 
 
-#ifndef MXGUI_COLOR_DEPTH_1_BIT
+#ifndef MXGUI_COLOR_DEPTH_1_BIT_LINEAR
 void Benchmark::antialiasingBenchmark()
 {
     unsigned int totalTime=0;
@@ -212,18 +212,18 @@ void Benchmark::antialiasingBenchmark()
     totalTime/=4;
     results[index++]=BenchmarkResult("Antialiased text",totalTime);
 }
-#endif //MXGUI_COLOR_DEPTH_1_BIT
+#endif //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
 
 void Benchmark::horizontalLineBenchmark()
 {
     unsigned int totalTime=0;
     for(int i=0;i<4;i++)
     {
-        #ifndef MXGUI_COLOR_DEPTH_1_BIT
+        #ifndef MXGUI_COLOR_DEPTH_1_BIT_LINEAR
         Color color=i%2==0?red:green;
-        #else //MXGUI_COLOR_DEPTH_1_BIT
+        #else //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
         Color color=i%2==0?white:black;
-        #endif //MXGUI_COLOR_DEPTH_1_BIT
+        #endif //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
         {
             DrawingContext dc(display);
             timer.start();
@@ -244,11 +244,11 @@ void Benchmark::verticalLineBenchmark()
     unsigned int totalTime=0;
     for(int i=0;i<4;i++)
     {
-        #ifndef MXGUI_COLOR_DEPTH_1_BIT
+        #ifndef MXGUI_COLOR_DEPTH_1_BIT_LINEAR
         Color color=i%2==0?red:green;
-        #else //MXGUI_COLOR_DEPTH_1_BIT
+        #else //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
         Color color=i%2==0?white:black;
-        #endif //MXGUI_COLOR_DEPTH_1_BIT
+        #endif //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
         {
             DrawingContext dc(display);
             timer.start();
@@ -269,18 +269,18 @@ void Benchmark::obliqueLineBenchmark()
     unsigned int totalTime=0; 
     for(int i=0;i<4;i++)
     {
-        #ifndef MXGUI_COLOR_DEPTH_1_BIT
+        #ifndef MXGUI_COLOR_DEPTH_1_BIT_LINEAR
         const Color darkRed(0x7800);
         const Color darkGreen(0x3e00);
         const Color darkBlue(0x000f);
         Color colorA=i%2==0?darkRed:darkGreen;
         Color colorB=i%2==0?darkGreen:darkBlue;
         Color colorC=i%2==0?darkBlue:darkRed;
-        #else //MXGUI_COLOR_DEPTH_1_BIT
+        #else //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
         Color colorA=i%2==0?white:black;
         Color colorB=colorA;
         Color colorC=i%2==0?black:white;
-        #endif //MXGUI_COLOR_DEPTH_1_BIT
+        #endif //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
         {
             DrawingContext dc(display);
             timer.start();
@@ -333,11 +333,11 @@ void Benchmark::clearScreenBenchmark()
     unsigned int totalTime=0;
     for(int i=0;i<4;i++)
     {
-        #ifndef MXGUI_COLOR_DEPTH_1_BIT
+        #ifndef MXGUI_COLOR_DEPTH_1_BIT_LINEAR
         Color color=i%2==0?red:green;
-        #else //MXGUI_COLOR_DEPTH_1_BIT
+        #else //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
         Color color=i%2==0?white:black;
-        #endif //MXGUI_COLOR_DEPTH_1_BIT
+        #endif //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
         {
             DrawingContext dc(display);
             timer.start();
@@ -362,11 +362,11 @@ void Benchmark::imageBenchmark()
             timer.start();
             for(int j=0;j<dc.getWidth();j+=16)
                 for(int k=0;k<dc.getHeight();k+=16)
-                    #ifndef MXGUI_COLOR_DEPTH_1_BIT
+                    #ifndef MXGUI_COLOR_DEPTH_1_BIT_LINEAR
                     dc.drawImage(Point(j,k),micro_qr_code_from_wikipedia);
-                    #else //MXGUI_COLOR_DEPTH_1_BIT
+                    #else //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
                     dc.drawImage(Point(j,k),checkpattern2);
-                    #endif //MXGUI_COLOR_DEPTH_1_BIT
+                    #endif //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
             timer.stop();
         }
         delayMs(250);
@@ -382,7 +382,7 @@ void Benchmark::imageBenchmark()
     results[index++]=BenchmarkResult("Draw image",totalTime);
 }
 
-#ifndef MXGUI_COLOR_DEPTH_1_BIT
+#ifndef MXGUI_COLOR_DEPTH_1_BIT_LINEAR
 static const Color rainbow[]={
  63488,63520,63584,63616,63680,63744,63776,63840,
  63872,63936,64000,64032,64096,64128,64192,64256,
@@ -439,7 +439,7 @@ void Benchmark::scanLineBenchmark()
     totalTime/=4;
     results[index++]=BenchmarkResult("ScanLine",totalTime);
 }
-#endif //MXGUI_COLOR_DEPTH_1_BIT
+#endif //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
 
 void Benchmark::clippedDrawBenchmark()
 {
@@ -455,11 +455,11 @@ void Benchmark::clippedDrawBenchmark()
                     Point p(j-8,k-8);
                     Point a(j,k);
                     Point b(j+8,k+8);
-                    #ifndef MXGUI_COLOR_DEPTH_1_BIT
+                    #ifndef MXGUI_COLOR_DEPTH_1_BIT_LINEAR
                     dc.clippedDrawImage(p,a,b,micro_qr_code_from_wikipedia);
-                    #else //MXGUI_COLOR_DEPTH_1_BIT
+                    #else //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
                     dc.clippedDrawImage(p,a,b,checkpattern2);
-                    #endif //MXGUI_COLOR_DEPTH_1_BIT
+                    #endif //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
                 }
             timer.stop();
         }
@@ -491,15 +491,15 @@ void Benchmark::clippedWriteBenchmark()
     {
         {
             DrawingContext dc(display);
-            #ifndef MXGUI_COLOR_DEPTH_1_BIT
+            #ifndef MXGUI_COLOR_DEPTH_1_BIT_LINEAR
             dc.setFont(droid11);
             if(i%2==0) dc.setTextColor(red,black);
             else dc.setTextColor(green,black);
-            #else //MXGUI_COLOR_DEPTH_1_BIT
+            #else //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
             dc.setFont(tahoma);
             if(i%2==0) dc.setTextColor(white,black);
             else dc.setTextColor(black,white);
-            #endif //MXGUI_COLOR_DEPTH_1_BIT
+            #endif //MXGUI_COLOR_DEPTH_1_BIT_LINEAR
             timer.start();
             for(int j=0;j<dc.getHeight();j+=6)
             {

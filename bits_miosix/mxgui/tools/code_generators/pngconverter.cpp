@@ -362,8 +362,37 @@ int main(int argc, char *argv[])
     shared_ptr<ImageWriter> imgw=ImageWriter::fromPixDepth(img,binary,pixDepth);
     imgw->write(file, outRequested ? &outImage : 0);
 
-    if(!binary) file<<endl<<"};"<<endl<<endl<<"const Image "<<filename
-            <<"(height,width,pixelData);";
+    if(!binary)
+    {
+        // The image is declared simply as "Image" in the .h, while as
+        // "basic_image<type>" in the .cpp. This is a trick to allow a
+        // compile time check that the image pixel depth is correct.
+        // If both the image and the mxgui configurations agree the file
+        // will compile. Also, using "Image" in the .h allows to include
+        // heaer files that refer to "optional" images without causing
+        // compiler errors
+        string classname;
+        switch(pixDepth)
+        {
+            case _1bitlinear:
+                classname="Color1bitlinear";
+                break;
+            case _8:
+                classname="unsigned char";
+                break;
+            case _16:
+                classname="unsigned short";
+                break;
+            case _18:
+                throw runtime_error("TODO");
+                break;
+            case _24:
+                throw runtime_error("TODO");
+                break;
+        }
+        file<<endl<<"};"<<endl<<endl<<"const basic_image<"<<classname<<"> "
+            <<filename<<"(height,width,pixelData);";
+    }
     file.close();
 
     if(outRequested) outImage.write(vm["out"].as<string>());

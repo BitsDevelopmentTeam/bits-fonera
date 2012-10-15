@@ -42,25 +42,13 @@
 #include "mxgui/image.h"
 #include "mxgui/iterator_direction.h"
 #include <stdexcept>
+#include <limits>
 
 //This display is 1 bit per pixel, check that the color depth is properly
 //configured
-#ifndef MXGUI_COLOR_DEPTH_1_BIT
+#ifndef MXGUI_COLOR_DEPTH_1_BIT_LINEAR
 #error The bitsboard driver requires a color depth of 1bit per pixel
 #endif
-
-extern unsigned short *framebuffer;
-
-inline void fixmeSetPixel(short x, short y, char color)
-{
-	if(y>=64)
-	{
-		y-=64;
-		x+=256;
-	}
-	if(color) framebuffer[32*y+x/16] &=~ (1<<(x & 0xf));
-	else framebuffer[32*y+x/16] |= (1<<(x & 0xf));
-}
 
 namespace mxgui {
 
@@ -123,7 +111,18 @@ public:
      * \param p point where to draw pixel
      * \param color pixel color
      */
-    void setPixel(Point p, Color color);
+    void setPixel(Point p, Color color)
+    {
+        //if(p.x()<0 || p.y()<0 || p.x()>=width || p.y()>=height) return;
+        unsigned short x=p.x();
+        unsigned short y=p.y();
+        if(y>=64)
+        {
+            y-=64;
+            x+=256;
+        }
+        framebufferBitBandAlias[512*y+x]= color ? 0 : 1;
+    }
 
     /**
      * Draw a line between point a and point b, with color c
@@ -237,7 +236,7 @@ public:
         /**
          * Default constructor, results in an invalid iterator.
          */
-        pixel_iterator(): disp(0) {}
+        pixel_iterator(): dataPtr(0) {}
 
         /**
          * Set a pixel and move the pointer to the next one
@@ -246,20 +245,25 @@ public:
          */
         pixel_iterator& operator= (Color color)
         {
-            //Safety checks.
-            if(cur.x()>end.x() || cur.y()>end.y())
-                throw(std::logic_error("pixel iterator out of bounds"));
-            if(disp==0)
-                throw(std::logic_error("default constructed pixel iterator"));
+            *dataPtr= color ? 0 : 1;
 
-            fixmeSetPixel(cur.x(),cur.y(),color);
-            if(direction==DR)
+            //This is to move to the adjacent pixel
+            dataPtr+=aIncr;
+
+            //This is in case the 64th vertical line is crossed, and is because
+            //the display framebuffer is logically 256x128 but physically 512x64
+            if(--quirkCtr<=0)
             {
-                if(cur.y()<end.y()) cur=Point(cur.x(),cur.y()+1);
-                else cur=Point(cur.x()+1,start.y());
-            } else {
-                if(cur.x()<end.x()) cur=Point(cur.x()+1,cur.y());
-                else cur=Point(start.x(),cur.y()+1);
+                quirkCtr=quirkReload[quirkFlag];
+                dataPtr+=qIncr[quirkFlag];
+                quirkFlag=1-quirkFlag;
+            }
+            
+            //This is the step move to the next horizontal/vertical line
+            if(++ctr>=endCtr)
+            {
+                ctr=0;
+                dataPtr+=sIncr;
             }
             return *this;
         }
@@ -270,7 +274,7 @@ public:
          */
         bool operator== (const pixel_iterator& itr)
         {
-            return this->cur==itr.cur;
+            return this->dataPtr==itr.dataPtr;
         }
 
         /**
@@ -279,7 +283,7 @@ public:
          */
         bool operator!= (const pixel_iterator& itr)
         {
-            return this->cur!=itr.cur;
+            return this->dataPtr!=itr.dataPtr;
         }
 
         /**
@@ -306,14 +310,63 @@ public:
          * \param disp Display we're associated
          */
         pixel_iterator(Point start, Point end, IteratorDirection direction,
-                DisplayImpl *disp): start(start), cur(start), end(end),
-                direction(direction), disp(disp) {}
+                DisplayImpl *disp) : ctr(0),
+                quirkCtr(std::numeric_limits<int>::max()), quirkFlag(0),
+                dataPtr(disp->framebufferBitBandAlias)
+        {
+            //Handle the framebuffer quirk if the start is in the bottom half
+            short ys=start.y();
+            short half=disp->getHeight()/2;
+            if(ys>=half)
+            {
+                ys-=half;
+                dataPtr+=disp->getWidth();
+            }
+            
+            //Compite the increment in the adjacent direction (aIncr) and in the
+            //step direction (sIncr) depending on the direction
+            dataPtr+=2*ys*disp->getWidth()+start.x();
+            if(direction==RD)
+            {
+                endCtr=end.x()+1-start.x();
+                aIncr=1;
+                sIncr=start.x()+2*disp->getWidth()-1-end.x();
+            } else {
+                endCtr=end.y()+1-start.y();
+                aIncr=2*disp->getWidth();
+                sIncr=-aIncr*endCtr+1;
+            }
+            
+            //Handle the framebuffer quirk if the window crosses the screen half
+            if(start.y()<half && end.y()>=half)
+            {
+                if(direction==RD)
+                {
+                    //In this case the 64th line is crossed only once
+                    quirkCtr=endCtr*(half-start.y());
+                    quirkReload[0]=std::numeric_limits<int>::max();
+                    qIncr[0]=-(disp->getHeight()-1)*disp->getWidth();
+                } else {
+                    //In this case the 64th line is crossed many times
+                    quirkReload[0]=end.y()+1-half;
+                    quirkReload[1]=quirkCtr=half-start.y();
+                    qIncr[0]=-(disp->getHeight()-1)*disp->getWidth();
+                    qIncr[1]=(disp->getHeight()-1)*disp->getWidth();
+                }
+            }
+        }
 
-        Point start; ///< Upper left corner of window
-        Point cur; ///< Current pixel we're pointing at
-        Point end; ///< Lower right corner of window
-        IteratorDirection direction; ///< Iterator direction
-        DisplayImpl *disp; ///< Display we're associated
+        unsigned short ctr;           ///< Counter to decide when to step
+        unsigned short endCtr;        ///< When ctr==endCtr apply a step
+        
+        int quirkCtr;                 ///< Quirk increment is done if reaches zero
+        unsigned short quirkReload[2];///< Value reloaded into quirkCtr
+        int qIncr[2];                 ///< Quirk increments
+        short quirkFlag;              ///< Used as index in the previous arrays
+        
+        short aIncr;                  ///< Adjacent increment
+        int sIncr;                    ///< Step increment           
+        unsigned int *dataPtr;        ///< Pointer to bit band area
 
         friend class DisplayImpl; //Needs access to ctor
     };
@@ -355,6 +408,7 @@ private:
     Color textColor[4];
     Font font; ///< Current font selected for writing text
     pixel_iterator last; ///< Last iterator for end of iteration check
+    unsigned int *framebufferBitBandAlias; ///< For fast pixel_iterator
 };
 
 } //namespace mxgui
