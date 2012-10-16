@@ -30,7 +30,9 @@
 #ifndef MISC_DRIVERS
 #define MISC_DRIVERS
 
+#ifdef _MIOSIX
 #include <miosix.h>
+#endif //_MIOSIX
 
 class Temperature
 {
@@ -67,7 +69,9 @@ private:
 
 	Keyboard();
 
+	#ifdef _MIOSIX
 	miosix::Queue<char,3> keyPressed;
+	#endif //_MIOSIX
 };
 
 #endif //MISC_DRIVERS

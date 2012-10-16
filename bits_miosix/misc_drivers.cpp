@@ -1,6 +1,8 @@
 
 #include "misc_drivers.h"
+#include <unistd.h>
 
+#ifdef _MIOSIX
 using namespace miosix;
 
 // Keyboard
@@ -42,6 +44,7 @@ static unsigned short adcRead(unsigned char input)
 	while((ADC1->SR & ADC_SR_EOC)==0) ;
 	return ADC1->DR;
 }
+#endif //_MIOSIX
 
 //
 // class Temeperature
@@ -55,6 +58,7 @@ Temperature& Temperature::instance()
 
 float Temperature::get()
 {
+	#ifdef _MIOSIX
 	const int average=32;
 	int x=0;
 	for(int i=0;i<average;i++) x+=adcRead(16); //16=Temp sensor
@@ -64,11 +68,16 @@ float Temperature::get()
 	//a thermometer in the same room. Not precise at all.
 	//The formula also assumes the ADC Vmax is 3V
 	return (static_cast<float>(x)-952.0f)*0.293f-5.0f;
+	#else //_MIOSIX
+	return 22.0; //For the simulator always return 22
+	#endif //_MIOSIX
 }
 
 Temperature::Temperature()
 {
+	#ifdef _MIOSIX
 	adcInit();
+	#endif //_MIOSIX
 }
 
 //
@@ -84,20 +93,29 @@ Keyboard& Keyboard::instance()
 char Keyboard::getKey()
 {
 	char result;
+	#ifdef _MIOSIX
 	keyPressed.get(result);
+	#else //_MIOSIX
+	for(;;) sleep(1); //TODO
+	#endif //_MIOSIX
 	return result;
 }
 
 char Keyboard::getKeyNonBlocking()
 {
+	#ifdef _MIOSIX
 	FastInterruptDisableLock dLock;
 	char result;
 	if(keyPressed.IRQget(result)==false) result='-';
 	return result;
+	#else //_MIOSIX
+	return '-'; //TODO
+	#endif //_MIOSIX
 }
 
 void Keyboard::keybThread()
 {
+	#ifdef _MIOSIX
 	{
 		FastInterruptDisableLock dLock;
 		c1::mode(Mode::INPUT_PULL_UP);
@@ -141,9 +159,12 @@ void Keyboard::keybThread()
 		if(pressed==false && oldStatus==true) keyPressed.put(key);
 		oldStatus=pressed;
 	}
+	#endif //_MIOSIX
 }
 
 Keyboard::Keyboard()
 {
+	#ifdef _MIOSIX
 	Thread::create(Keyboard::launcher,STACK_MIN,1,this);
+	#endif //_MIOSIX
 }

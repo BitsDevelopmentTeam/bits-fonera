@@ -28,64 +28,44 @@
 #include <cstdio>
 #include <cstring>
 #include <cctype>
-#include <miosix.h>
-#include "misc_drivers.h"
-#include "logo.h"
-#include "logo-open.h"
-#include "logo-closed.h"
+#include <unistd.h>
 #include "mxgui/display.h"
 #include "mxgui/misc_inst.h"
+#include "mxgui/entry.h"
+#include "misc_drivers.h"
+#include "img/logo2.h"
 
 using namespace std;
-using namespace miosix;
 using namespace mxgui;
 
-typedef Gpio<GPIOD_BASE,14> redLed;
-typedef Gpio<GPIOD_BASE,12> greenLed;
-
-void keyboardThread(void*)
+void* keyboardThread(void*)
 {
 	for(;;) printf("\n-->%c\n",Keyboard::instance().getKey());
 }
 
-void tempThread(void*)
+void* tempThread(void*)
 {
 	for(;;)
 	{
-		Thread::sleep(120*1000);
+		sleep(120);
 		printf("\n-->T %4.1f\n",Temperature::instance().get());
 	}
-//TODO: incremental temperature
-// 	int oldTemp=Temperature::instance().get();
-// 	printf("\n-->T %4.1f\n",oldTemp);
-// 	for(;;)
-// 	{
-// 		Thread::sleep(120*1000);
-// 		int newTemp=Temperature::instance().get();
-// 		if(newTemp==oldTemp) continue;
-// 		oldTemp=newTemp;
-// 		printf("\n-->T %4.1f\n",oldTemp);
-// 	}
 }
 
-int main()
+ENTRY()
 {
-	Display& display=Display::instance();
+    Display& display=Display::instance();
 	{
 		DrawingContext dc(display);
-		dc.setFont(miscFixed);
-		dc.write(Point(70,20),"Hello world");
-		dc.line(Point(0,0),Point(255,127),black);
-		dc.clear(Point(10,10),Point(20,20),black);
-		for(int i=0;i<10;i++) dc.line(Point(3*i,64),Point(3*i,127),black);
-		
+		dc.clear(white);
+		dc.setFont(tahoma);
+		dc.drawImage(Point(0,13),logo2);
+		dc.write(Point(0,13+1+logo2.getHeight()),"** Message line TODO");
 	}
-	redLed::mode(Mode::OUTPUT);
-	greenLed::mode(Mode::OUTPUT);
-	redLed::low();
-	greenLed::low();
-	Thread::create(keyboardThread,2048);
-	Thread::create(tempThread,2048);
+
+	pthread_t t1, t2;
+	pthread_create(&t1,0,keyboardThread,0);
+	pthread_create(&t2,0,tempThread,0);
 
 	for(;;)
 	{
@@ -99,14 +79,14 @@ int main()
 		}
 		if(strcmp(line,"open")==0)
 		{
-			redLed::low();
-			greenLed::high();
-// 			memcpy(framebuffer,logo_open,4096);
+			DrawingContext dc(display);
+			dc.clear(Point(0,0),Point(dc.getWidth()-1,tahoma.getHeight()),white);
+			dc.write(Point(0,0),"Sede aperta");
 		} else if(strcmp(line,"closed")==0)
 		{
-			greenLed::low();
-			redLed::high();
-// 			memcpy(framebuffer,logo_closed,4096);
+			DrawingContext dc(display);
+			dc.clear(Point(0,0),Point(dc.getWidth()-1,tahoma.getHeight()),white);
+			dc.write(Point(0,0),"Sede chiusa");
 		}
 	}
 }

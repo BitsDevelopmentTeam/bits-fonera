@@ -14,14 +14,9 @@ SUBDIRS := miosix mxgui
 ## List here your source files (both .s, .c and .cpp)
 ##
 SRC := \
-mxgui/benchmark/benchmark.cpp \
-mxgui/benchmark/bm_main.cpp \
-mxgui/benchmark/checkpattern2.cpp
-
-LOL=\
 main.cpp \
 misc_drivers.cpp \
-logo2.cpp
+img/logo2.cpp
 
 ##
 ## List here additional static libraries with relative path

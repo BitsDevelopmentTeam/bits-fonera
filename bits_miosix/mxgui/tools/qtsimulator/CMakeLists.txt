@@ -17,8 +17,9 @@ set(FOO_SRCS
     qtbackend.cpp
     window.cpp
     qtsimulator.cpp
-    ../../../drawboard.cpp
-    ../../../logo2.cpp)
+    ../../../main.cpp
+    ../../../misc_drivers.cpp
+    ../../../img/logo2.cpp)
 set(FOO_HEADERS window.h)
 
 # ../../.. is the main project directory
