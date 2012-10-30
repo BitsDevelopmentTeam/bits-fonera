@@ -36,11 +36,41 @@
 #include "img/logo2.h"
 
 using namespace std;
+using namespace miosix;
 using namespace mxgui;
+
+volatile bool status;
+
+typedef Gpio<GPIOA_BASE,0> button;
 
 void* keyboardThread(void*)
 {
-	for(;;) printf("\n-->%c\n",Keyboard::instance().getKey());
+	Display& display=Display::instance();
+	button::mode(Mode::INPUT);
+	bool oldx=false;
+	for(;;)
+	{
+		bool newx=button::value();
+		if(newx && !oldx)
+		{
+			status=!status;
+			if(status)
+			{
+				printf("\n-->A\n");
+				DrawingContext dc(display);
+				dc.clear(Point(0,0),Point(dc.getWidth()-1,tahoma.getHeight()),white);
+				dc.write(Point(0,0),"Sede aperta");
+			} else {
+				printf("\n-->C\n");
+				DrawingContext dc(display);
+				dc.clear(Point(0,0),Point(dc.getWidth()-1,tahoma.getHeight()),white);
+				dc.write(Point(0,0),"Sede chiusa");
+			}
+		}
+		oldx=newx;
+		Thread::sleep(200);
+	}
+	//for(;;) printf("\n-->%c\n",Keyboard::instance().getKey());
 }
 
 void* tempThread(void*)
@@ -79,11 +109,13 @@ ENTRY()
 		}
 		if(strcmp(line,"open")==0)
 		{
+			status=true;
 			DrawingContext dc(display);
 			dc.clear(Point(0,0),Point(dc.getWidth()-1,tahoma.getHeight()),white);
 			dc.write(Point(0,0),"Sede aperta");
 		} else if(strcmp(line,"closed")==0)
 		{
+			status=false;
 			DrawingContext dc(display);
 			dc.clear(Point(0,0),Point(dc.getWidth()-1,tahoma.getHeight()),white);
 			dc.write(Point(0,0),"Sede chiusa");
