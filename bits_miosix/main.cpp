@@ -45,28 +45,12 @@ typedef Gpio<GPIOA_BASE,0> button;
 
 void* keyboardThread(void*)
 {
-	Display& display=Display::instance();
 	button::mode(Mode::INPUT);
 	bool oldx=false;
 	for(;;)
 	{
 		bool newx=button::value();
-		if(newx && !oldx)
-		{
-			status=!status;
-			if(status)
-			{
-				printf("\n-->A\n");
-				DrawingContext dc(display);
-				dc.clear(Point(0,0),Point(dc.getWidth()-1,tahoma.getHeight()),white);
-				dc.write(Point(0,0),"Sede aperta");
-			} else {
-				printf("\n-->C\n");
-				DrawingContext dc(display);
-				dc.clear(Point(0,0),Point(dc.getWidth()-1,tahoma.getHeight()),white);
-				dc.write(Point(0,0),"Sede chiusa");
-			}
-		}
+		if(newx && !oldx) printf("\n-->%s\n", status ? "C" : "A");
 		oldx=newx;
 		Thread::sleep(200);
 	}
