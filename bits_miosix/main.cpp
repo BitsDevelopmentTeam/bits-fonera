@@ -40,7 +40,11 @@ using namespace mxgui;
 
 void* keyboardThread(void*)
 {
-	for(;;) printf("\n-->%c\n",Keyboard::instance().getKey());
+	for(;;)
+	{
+		printf("\n-->%c\n",Keyboard::instance().getKey());
+		fflush(stdout);
+	}
 }
 
 void* tempThread(void*)
@@ -49,6 +53,7 @@ void* tempThread(void*)
 	{
 		sleep(120);
 		printf("\n-->T %4.1f\n",Temperature::instance().get());
+		fflush(stdout);
 	}
 }
 

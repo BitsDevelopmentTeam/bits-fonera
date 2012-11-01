@@ -121,6 +121,7 @@ void BitsdCore::serialWrite(const string& message)
 			asio::placeholders::error,data));
 	#else //DEBUG_MODE
 	cout<<message; //If debugging write to stdout
+	cout.flush();
 	#endif //DEBUG_MODE
 }
 
