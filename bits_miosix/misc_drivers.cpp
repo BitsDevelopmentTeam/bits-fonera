@@ -1,5 +1,7 @@
 
 #include "misc_drivers.h"
+#include "mxgui/level2/input.h"
+#include <cctype>
 #include <unistd.h>
 
 #ifdef _MIOSIX
@@ -14,6 +16,8 @@ typedef Gpio<GPIOC_BASE,1> c1;
 typedef Gpio<GPIOC_BASE,2> c2;
 typedef Gpio<GPIOC_BASE,4> c3;
 typedef Gpio<GPIOC_BASE,5> c4;
+
+typedef Gpio<GPIOA_BASE,0> button; //FIXME: temporary, until the keyboard is fixed
 
 /**
  * Initializes ADC1 of the microcontroller
@@ -92,13 +96,17 @@ Keyboard& Keyboard::instance()
 
 char Keyboard::getKey()
 {
-	char result;
 	#ifdef _MIOSIX
+	char result;
 	keyPressed.get(result);
-	#else //_MIOSIX
-	for(;;) sleep(1); //TODO
-	#endif //_MIOSIX
 	return result;
+	#else //_MIOSIX
+	for(;;)
+	{
+		mxgui::Event e=mxgui::InputHandler::instance().getEvent();
+		if(e.getEvent()==EventType::KeyUp) return toupper(e.getKey());
+	}
+	#endif //_MIOSIX
 }
 
 char Keyboard::getKeyNonBlocking()
@@ -109,55 +117,76 @@ char Keyboard::getKeyNonBlocking()
 	if(keyPressed.IRQget(result)==false) result='-';
 	return result;
 	#else //_MIOSIX
-	return '-'; //TODO
+	mxgui::Event e=mxgui::InputHandler::instance().popEvent();
+	return e.getEvent()==EventType::KeyUp ? toupper(e.getKey()) : '-';
 	#endif //_MIOSIX
 }
 
 void Keyboard::keybThread()
 {
 	#ifdef _MIOSIX
+// 	{
+// 		FastInterruptDisableLock dLock;
+// 		c1::mode(Mode::INPUT_PULL_UP);
+// 		c2::mode(Mode::INPUT_PULL_UP);
+// 		c3::mode(Mode::INPUT_PULL_UP);
+// 		c4::mode(Mode::INPUT_PULL_UP);
+// 		r1::mode(Mode::OPEN_DRAIN);
+// 		r2::mode(Mode::OPEN_DRAIN);
+// 		r3::mode(Mode::OPEN_DRAIN);
+// 		r4::mode(Mode::OPEN_DRAIN);
+// 	}
+// 	bool oldStatus=false;
+// 	char key='-';
+// 	for(;;)
+// 	{
+// 		bool pressed=false;
+// 		r1::low(); r2::high(); r3::high(); r4::high();
+// 		Thread::sleep(5);
+// 		if(c1::value()==0) { key='1'; pressed=true; }
+// 		if(c2::value()==0) { key='2'; pressed=true; }
+// 		if(c3::value()==0) { key='3'; pressed=true; }
+// 		if(c4::value()==0) { key='A'; pressed=true; }
+// 		r1::high(); r2::low(); r3::high(); r4::high();
+// 		Thread::sleep(5);
+// 		if(c1::value()==0) { key='4'; pressed=true; }
+// 		if(c2::value()==0) { key='5'; pressed=true; }
+// 		if(c3::value()==0) { key='6'; pressed=true; }
+// 		if(c4::value()==0) { key='B'; pressed=true; }
+// 		r1::high(); r2::high(); r3::low(); r4::high();
+// 		Thread::sleep(5);
+// 		if(c1::value()==0) { key='7'; pressed=true; }
+// 		if(c2::value()==0) { key='8'; pressed=true; }
+// 		if(c3::value()==0) { key='9'; pressed=true; }
+// 		if(c4::value()==0) { key='C'; pressed=true; }
+// 		r1::high(); r2::high(); r3::high(); r4::low();
+// 		Thread::sleep(5);
+// 		if(c1::value()==0) { key='*'; pressed=true; }
+// 		if(c2::value()==0) { key='0'; pressed=true; }
+// 		if(c3::value()==0) { key='#'; pressed=true; }
+// 		if(c4::value()==0) { key='D'; pressed=true; }
+// 		if(pressed==false && oldStatus==true) keyPressed.put(key);
+// 		oldStatus=pressed;
+// 	}
+
+	//FIXME: temporary, until the keyboard is fixed
 	{
 		FastInterruptDisableLock dLock;
-		c1::mode(Mode::INPUT_PULL_UP);
-		c2::mode(Mode::INPUT_PULL_UP);
-		c3::mode(Mode::INPUT_PULL_UP);
-		c4::mode(Mode::INPUT_PULL_UP);
-		r1::mode(Mode::OPEN_DRAIN);
-		r2::mode(Mode::OPEN_DRAIN);
-		r3::mode(Mode::OPEN_DRAIN);
-		r4::mode(Mode::OPEN_DRAIN);
+		button::mode(Mode::INPUT);
 	}
-	bool oldStatus=false;
-	char key='-';
+	bool oldx=false;
+	char value='A'; //Since we have just one button, use it for both A and C
 	for(;;)
 	{
-		bool pressed=false;
-		r1::low(); r2::high(); r3::high(); r4::high();
-		Thread::sleep(5);
-		if(c1::value()==0) { key='1'; pressed=true; }
-		if(c2::value()==0) { key='2'; pressed=true; }
-		if(c3::value()==0) { key='3'; pressed=true; }
-		if(c4::value()==0) { key='A'; pressed=true; }
-		r1::high(); r2::low(); r3::high(); r4::high();
-		Thread::sleep(5);
-		if(c1::value()==0) { key='4'; pressed=true; }
-		if(c2::value()==0) { key='5'; pressed=true; }
-		if(c3::value()==0) { key='6'; pressed=true; }
-		if(c4::value()==0) { key='B'; pressed=true; }
-		r1::high(); r2::high(); r3::low(); r4::high();
-		Thread::sleep(5);
-		if(c1::value()==0) { key='7'; pressed=true; }
-		if(c2::value()==0) { key='8'; pressed=true; }
-		if(c3::value()==0) { key='9'; pressed=true; }
-		if(c4::value()==0) { key='C'; pressed=true; }
-		r1::high(); r2::high(); r3::high(); r4::low();
-		Thread::sleep(5);
-		if(c1::value()==0) { key='*'; pressed=true; }
-		if(c2::value()==0) { key='0'; pressed=true; }
-		if(c3::value()==0) { key='#'; pressed=true; }
-		if(c4::value()==0) { key='D'; pressed=true; }
-		if(pressed==false && oldStatus==true) keyPressed.put(key);
-		oldStatus=pressed;
+		bool newx=button::value();
+		if(newx && !oldx)
+		{
+			FastInterruptDisableLock dLock;
+			keyPressed.IRQput(value);
+			value= (value=='A') ? 'C' : 'A'; 
+		}
+		oldx=newx;
+		Thread::sleep(200);
 	}
 	#endif //_MIOSIX
 }
