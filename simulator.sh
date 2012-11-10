@@ -1,11 +1,16 @@
 #!/bin/bash
 
-pushd bits_miosix/mxgui/tools/qtsimulator/build
+QTSIMDIR=bits_miosix/mxgui/tools/qtsimulator/build
+BITSDIR=bitsd/src/build
+
+[ -d $QTSIMDIR ] || mkdir $QTSIMDIR
+pushd $QTSIMDIR
 cmake ..
 make
 popd
 
-cd bitsd/src/build
+[ -d $BITSDIR ] mkdir $BITSDIR
+cd $BITSDIR
 cmake ..
 make
 
