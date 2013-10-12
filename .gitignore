@@ -1,0 +1,8 @@
+*.o
+*.a
+*build*
+*main.elf
+*main.bin
+*main.hex
+*main.map
+
