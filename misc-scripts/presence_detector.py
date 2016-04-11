@@ -7,11 +7,11 @@ import hmac
 import hashlib
 import urllib
 import json
-import ipaddr
+from scapy.all import *
 
 KEY = "Your key here"
 POST_PASSWORD = "Your password here"
-SUBMIT_URL = "https://bits.poul.org/macupdate"
+SUBMIT_URL = "Your submission url here"
 
 # Output interface to use for the ping (note: the all nodes special multicast
 # address requires to specify an output interface)
@@ -20,36 +20,19 @@ OUT_IF = "eth1"
 # Scan every 1 minute
 SCAN_PERIOD = 60
 
-def get_mac_addr(addr):
-    """ Take out MAC address bytes from the IPv6, and return the MAC
-        address in a string format.
-    """
-    mac_bytes = []
-    mac_bytes.append(int(((int(addr) >> 56) & 0xff) ^ 0x02))
-    mac_bytes.append(int((int(addr) >> 48) & 0xff))
-    mac_bytes.append(int((int(addr) >> 40) & 0xff))
-    mac_bytes.append(int((int(addr) >> 16) & 0xff))
-    mac_bytes.append(int((int(addr) >> 8) & 0xff))
-    mac_bytes.append(int(int(addr) & 0xff))
-    return ":".join([hex(x)[2:].zfill(2) for x in mac_bytes])
-
 def getMacList():
     # We exploit the all-nodes multicast ipv6 address for pinging and
     # getting a reply from all hosts connected to poul's network.
-    ping_output = subprocess.check_output(["ping6", "-I", OUT_IF, "-w", "6",
-                                           "-i", "2", "ff02::1"]).lower()
-    ipv6s = re.findall("64 bytes from (.*): icmp_seq", ping_output)
 
     macs = set() # We want to avoid returning the same mac multiple times
-    for addr_str in ipv6s:
-        try:
-            addr = ipaddr.IPAddress(addr_str)
-        except ValueError:
-            pass # Skipping invalid address
 
-        if addr.is_link_local:
-            macs.add(get_mac_addr(addr))
-        
+    ans,unans = srp(Ether(dst="33:33:00:00:00:01")/IPv6(
+                    dst="ff02::1")/ICMPv6EchoRequest(),
+                    timeout = 3, multi = 1, iface = OUT_IF)
+
+    for replies in ans:
+        macs.add(replies[1].src)
+
     return macs
 
 while True:
@@ -75,5 +58,4 @@ while True:
         print("Submission failed")
 
     time.sleep(SCAN_PERIOD)
-
 
